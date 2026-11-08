@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { Server as SocketIOServer, type Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient } from 'ioredis';
+import Redis from 'ioredis';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
@@ -59,9 +59,9 @@ export const attachRealtime = (
 
   // Redis pub/sub adapter for horizontal scaling
   if (process.env.NODE_ENV !== 'test') {
-    const pubClient = createClient(redisUrl);
+    const pubClient = new Redis(redisUrl);
     const subClient = pubClient.duplicate();
-    io.adapter(createAdapter(pubClient, subClient));
+    io.adapter(createAdapter(pubClient as never, subClient as never));
   }
 
   // ── JWT Authentication middleware ──────────────────────────────────────────
@@ -141,4 +141,3 @@ export const attachRealtime = (
   _io = io;
   return io;
 };
-

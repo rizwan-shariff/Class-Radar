@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authPreHandler, requireRole } from '../auth/auth.js';
 import type { AuthDependencies } from '../auth/auth.js';
 import { emitToRoom } from '../realtime/realtime.js';
+import { isRoomFree } from '../rooms/rooms.js';
 
 // ── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -27,6 +28,16 @@ export type BookingDependencies = AuthDependencies & {
   slot: {
     findFirst(args: {
       where: { roomId: string; weekday: number; period: number };
+    }): Promise<{ id: string } | null>;
+  };
+  substitution: {
+    findFirst(args: {
+      where: {
+        roomId: string;
+        date: Date;
+        status: 'CONFIRMED';
+        slot: { weekday: number; period: number };
+      };
     }): Promise<{ id: string } | null>;
   };
   roomBooking: {
@@ -103,25 +114,9 @@ export const registerBookingRoutes = (
           error: { code: 'INVALID_DATE', message: 'Cannot book a room on Sunday' },
         });
       }
-      const weekday = jsDay; // 1–6
-
-      // isRoomFree check 1: no timetable slot occupies this room at this weekday+period
-      const slotConflict = await deps.slot.findFirst({
-        where: { roomId, weekday, period },
-      });
-      if (slotConflict) {
+      if (!(await isRoomFree(roomId, bookingDate, period, deps))) {
         return reply.code(409).send({
-          error: { code: 'ROOM_NOT_FREE', message: 'Room is occupied by a scheduled class' },
-        });
-      }
-
-      // isRoomFree check 2: no existing booking
-      const bookingConflict = await deps.roomBooking.findUnique({
-        where: { roomId_date_period: { roomId, date: bookingDate, period } },
-      });
-      if (bookingConflict) {
-        return reply.code(409).send({
-          error: { code: 'ROOM_NOT_FREE', message: 'Room is already booked for this period' },
+          error: { code: 'ROOM_NOT_FREE', message: 'Room is not available for this period' },
         });
       }
 

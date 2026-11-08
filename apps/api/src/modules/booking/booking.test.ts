@@ -88,6 +88,9 @@ const createDeps = (overrides: Partial<BookingDependencies> = {}): BookingDepend
     slot: {
       findFirst: async () => null, // No slot conflict by default
     },
+    substitution: {
+      findFirst: async () => null,
+    },
     roomBooking: {
       findUnique: async ({ where }) => {
         const { roomId, date, period } = where.roomId_date_period;

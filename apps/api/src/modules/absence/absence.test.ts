@@ -58,12 +58,6 @@ const makeToken = (user: typeof faculty | typeof admin | typeof student) =>
 
 // ── Dep factory ────────────────────────────────────────────────────────────
 
-const makeAdminToken = () =>
-  jwt.sign({ role: admin.role, sectionId: null }, SECRET, {
-    subject: admin.id,
-    expiresIn: '1h',
-  });
-
 const createDeps = (overrides: Partial<AbsenceDependencies> = {}): AbsenceDependencies => ({
   user: {
     findUnique: async ({ where }) => {

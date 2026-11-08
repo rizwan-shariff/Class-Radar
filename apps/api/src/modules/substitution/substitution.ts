@@ -157,6 +157,9 @@ export type SubstitutionDependencies = AuthDependencies & {
       faculty?: { id: string; name: string; department: string | null };
       substitutions?: SubstitutionRow[];
     } | null>;
+    findMany?(args: {
+      where: { date: Date };
+    }): Promise<{ facultyId: string }[]>;
   };
   slot: {
     findMany(args: {
@@ -189,7 +192,7 @@ export type SubstitutionDependencies = AuthDependencies & {
     findMany(args: {
       where: {
         absenceId?: string;
-        date?: { gte: Date; lte: Date };
+        date?: Date | { gte: Date; lte: Date };
         status?: string;
         slotId?: { in: string[] };
         substituteFacultyId?: { not: null } | string;
@@ -329,14 +332,13 @@ export const registerSubstitutionRoutes = (
         select: { id: true, name: true, department: true },
       });
 
-      // Faculty absent that date
-      const absencesOnDate = await deps.substitution.findMany({
-        where: {
-          date: absenceDate,
-          status: 'CONFIRMED',
-        },
-      });
-      const absentFacultyIds = new Set([absence.facultyId]);
+      const absencesOnDate = deps.absence.findMany
+        ? await deps.absence.findMany({ where: { date: absenceDate } })
+        : [];
+      const absentFacultyIds = new Set([
+        absence.facultyId,
+        ...absencesOnDate.map((absenceOnDate) => absenceOnDate.facultyId),
+      ]);
 
       // Build set of faculty already substituting in each period
       // We need absence records for the date – fetch by slots
@@ -421,7 +423,6 @@ export const registerSubstitutionRoutes = (
         ]);
 
         // Exclude absent faculty room from occupied only if already in
-        const freeRooms = allRooms.filter((r) => !occupiedRooms.has(r.id) || r.id === slot.roomId);
         // Re-check: slot.roomId is "free" only if not occupied by others
         const slotRoomActuallyFree = !occupiedRooms.has(slot.roomId);
         const freeRoomsForSlot = slotRoomActuallyFree

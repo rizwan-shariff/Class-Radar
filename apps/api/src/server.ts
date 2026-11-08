@@ -10,6 +10,10 @@ import { registerAbsenceRoutes } from './modules/absence/absence.js';
 import { registerSubstitutionRoutes } from './modules/substitution/substitution.js';
 import { registerBookingRoutes } from './modules/booking/booking.js';
 import { registerAnalyticsRoutes } from './modules/analytics/analytics.js';
+import type { AbsenceDependencies } from './modules/absence/absence.js';
+import type { SubstitutionDependencies } from './modules/substitution/substitution.js';
+import type { BookingDependencies } from './modules/booking/booking.js';
+import type { AnalyticsDependencies } from './modules/analytics/analytics.js';
 
 export const prisma = new PrismaClient();
 
@@ -33,10 +37,11 @@ export const buildServer = (
 
   // Register route modules
   registerAuthRoutes(app, dependencies);
-  registerAbsenceRoutes(app, makePrismaDeps(prisma) as any);
-  registerSubstitutionRoutes(app, makePrismaDeps(prisma) as any);
-  registerBookingRoutes(app, makePrismaDeps(prisma) as any);
-  registerAnalyticsRoutes(app, makePrismaDeps(prisma) as any);
+  const moduleDependencies = makePrismaDeps(prisma);
+  registerAbsenceRoutes(app, moduleDependencies as unknown as AbsenceDependencies);
+  registerSubstitutionRoutes(app, moduleDependencies as unknown as SubstitutionDependencies);
+  registerBookingRoutes(app, moduleDependencies as unknown as BookingDependencies);
+  registerAnalyticsRoutes(app, moduleDependencies as unknown as AnalyticsDependencies);
 
   return app;
 };
