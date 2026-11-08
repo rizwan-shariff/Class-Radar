@@ -1,0 +1,171 @@
+openapi: 3.0.0
+info:
+  title: ClassRadar API
+  version: 1.0.0
+  description: Shared API contract for the ClassRadar application.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [STUDENT, FACULTY, ADMIN] }
+        department: { type: string }
+        sectionId: { type: string }
+
+    Slot:
+      type: object
+      properties:
+        id: { type: string }
+        sectionId: { type: string }
+        subjectId: { type: string }
+        facultyId: { type: string }
+        roomId: { type: string }
+        weekday: { type: integer, minimum: 1, maximum: 6 }
+        period: { type: integer, minimum: 1, maximum: 8 }
+
+    Room:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [CLASSROOM, LAB] }
+        capacity: { type: integer }
+
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/me:
+    get:
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /api/v1/timetable/me:
+    get:
+      summary: Get effective timetable for current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of slots and substitutions
+
+  /api/v1/timetable/import:
+    post:
+      summary: Import CSV timetable
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Import successful
+        '422':
+          description: Validation or clash errors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    row: { type: integer }
+                    message: { type: string }
+
+  /api/v1/rooms/free:
+    get:
+      summary: Find free rooms
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: period
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: type
+          schema: { type: string, enum: [CLASSROOM, LAB] }
+        - in: query
+          name: minCapacity
+          schema: { type: integer }
+      responses:
+        '200':
+          description: List of available rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
