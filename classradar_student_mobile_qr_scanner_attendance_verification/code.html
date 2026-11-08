@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ClassRadar - QR Attendance Scanner</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-fixed": "#0b1c30",
+            "surface-container-low": "#f2f3ff",
+            "primary-container": "#4f46e5",
+            "on-background": "#131b2e",
+            "secondary-container": "#dee2ef",
+            "on-secondary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "primary-fixed": "#e2dfff",
+            "on-primary-fixed-variant": "#3323cc",
+            "on-surface": "#131b2e",
+            "secondary": "#5a5e69",
+            "outline": "#777587",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#424751",
+            "surface-tint": "#4d44e3",
+            "surface": "#faf8ff",
+            "secondary-fixed": "#dee2ef",
+            "on-primary-fixed": "#0f0069",
+            "background": "#faf8ff",
+            "tertiary-fixed": "#d3e4fe",
+            "tertiary-fixed-dim": "#b7c8e1",
+            "inverse-on-surface": "#eef0ff",
+            "on-tertiary": "#ffffff",
+            "error": "#ba1a1a",
+            "on-surface-variant": "#464555",
+            "inverse-surface": "#283044",
+            "inverse-primary": "#c3c0ff",
+            "primary-fixed-dim": "#c3c0ff",
+            "surface-container-high": "#e2e7ff",
+            "on-error": "#ffffff",
+            "on-secondary-fixed": "#171c25",
+            "tertiary": "#3a495f",
+            "secondary-fixed-dim": "#c2c6d3",
+            "tertiary-container": "#516177",
+            "on-primary-container": "#dad7ff",
+            "on-tertiary-fixed-variant": "#38485d",
+            "on-tertiary-container": "#ccdcf7",
+            "on-error-container": "#93000a",
+            "surface-variant": "#dae2fd",
+            "outline-variant": "#c7c4d8",
+            "surface-dim": "#d2d9f4",
+            "on-primary": "#ffffff",
+            "on-secondary-container": "#60646f",
+            "surface-bright": "#faf8ff",
+            "primary": "#3525cd",
+            "surface-container": "#eaedff",
+            "surface-container-highest": "#dae2fd"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "0.75rem",
+            "space-lg": "1rem",
+            "space-xl": "1.5rem",
+            "space-2xl": "2rem",
+            "space-3xl": "3rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "margin": "1rem",
+            "margin-tablet": "1.5rem",
+            "margin-desktop": "2rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-sm": ["Inter"],
+            "headline-lg": ["Inter"],
+            "display-lg-mobile": ["Inter"],
+            "label-md": ["Inter"],
+            "body-md": ["Inter"],
+            "tabular-mono": ["Inter"],
+            "body-sm": ["Inter"],
+            "caption": ["Inter"],
+            "label-sm": ["Inter"],
+            "display-lg": ["Inter"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-lg-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "tabular-mono": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "caption": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "500" }],
+            "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    @keyframes scanline {
+      0% { top: 6%; opacity: 0.9; }
+      50% { top: 88%; opacity: 1; }
+      100% { top: 6%; opacity: 0.9; }
+    }
+    .scanner-laser {
+      animation: scanline 2.4s ease-in-out infinite;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased font-body-md flex justify-center min-h-screen">
+<!-- Mobile Screen Container (390px centered frame) -->
+<div class="w-full max-w-[430px] bg-surface-container-lowest min-h-screen flex flex-col relative pb-24 shadow-sm border-x border-surface-container">
+<!-- Top App Bar / Brand Header -->
+<header class="sticky top-0 z-30 bg-surface-container-lowest/95 backdrop-blur px-space-md py-space-sm border-b border-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<button aria-label="Go back" class="p-1.5 rounded-lg text-secondary hover:bg-surface-container hover:text-on-surface transition-colors flex items-center justify-center" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<div class="flex items-center gap-1.5">
+<img alt="ClassRadar Logo" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDg09GGyy_kCdNcStdIk1Ixb6ATOiZhaFJeZXHY02fjrdLZOHlvU1SB2Lk3Tv3lozspgKSjJ03dDEinNd8LrmgaENhYcYDxQSVTPb-4zjfzKHz9wkeHfN2eMazDUfefrP2FLj3PJVCfxlfiHgvaOazoQA5L7AGbcF5dbZVTAwS1iHcAQRutnI1JFDrfADX4FRL8unEnQBQck71mkrwDRrgEBsO2WTpFFvHCC3NtftLzzw"/>
+</div>
+</div>
+<!-- Student Badge Context -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container border border-surface-container-highest">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+<span class="font-caption text-caption text-secondary font-medium tracking-tight truncate max-w-[170px]">
+          Aarav Sharma · CSE-A (21CS042)
+        </span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-space-md pt-space-md space-y-space-md">
+<!-- Section 1: Active Class Context Card -->
+<section class="bg-surface-container-lowest border border-surface-container rounded-xl p-space-md relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex items-start justify-between gap-space-sm mb-1.5">
+<div class="flex items-center gap-1.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-primary-fixed text-primary border border-surface-container-highest">
+              Period 3 (11:15 AM - 12:05 PM)
+            </span>
+<span class="flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> In Progress
+            </span>
+</div>
+<span class="text-caption font-caption text-secondary">Week 7</span>
+</div>
+<h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight mt-1">
+          CS303: Data Structures &amp; Algorithms
+        </h1>
+<div class="flex items-center gap-space-sm mt-1 text-secondary text-body-sm font-body-sm">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">person</span>
+            Prof. K. Sharma
+          </span>
+<span>•</span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">meeting_room</span>
+            Room 204 (Block B)
+          </span>
+</div>
+<div class="mt-2.5 pt-2.5 border-t border-surface-container flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
+<span class="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
+<span>Campus Wi-Fi &amp; Room 204 Beacon Verified</span>
+</div>
+<span class="text-caption font-caption text-secondary">RSSI: -62 dBm</span>
+</div>
+</section>
+<!-- Section 2: Camera-Based QR Scanner Viewport -->
+<section class="relative bg-inverse-surface rounded-2xl overflow-hidden border border-surface-container shadow-inner">
+<!-- Top Scanner Overlay Bar -->
+<div class="absolute top-0 inset-x-0 z-20 px-space-md py-space-sm bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between text-white">
+<div class="flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-zinc-300">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-ping"></span>
+            RADAR OPTICAL SENSOR 01
+          </div>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur flex items-center justify-center transition-all text-white" id="torchBtn" onclick="toggleTorch()" type="button">
+<span class="material-symbols-outlined text-[18px]">flash_on</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur flex items-center justify-center transition-all text-white" onclick="flipCam()" type="button">
+<span class="material-symbols-outlined text-[18px]">cameraswitch</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur flex items-center justify-center transition-all text-white" onclick="resetScanner()" type="button">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+</button>
+</div>
+</div>
+<!-- Camera Canvas / Viewport Simulation -->
+<div class="relative w-full h-72 bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center p-6">
+<!-- Ambient Classroom Projector Glow Effect -->
+<div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500 via-transparent to-transparent"></div>
+<!-- Subtle Grid Backdrop simulating sensor matrix -->
+<div class="absolute inset-0 bg-[linear-gradient(to_right,#33415515_1px,transparent_1px),linear-gradient(to_bottom,#33415515_1px,transparent_1px)] bg-[size:16px_16px]"></div>
+<!-- Active Reticle Aperture -->
+<div class="relative w-52 h-52 flex items-center justify-center">
+<!-- Reticle Corners: Neon Indigo Brackets -->
+<div class="absolute top-0 left-0 w-7 h-7 border-t-[3px] border-l-[3px] border-primary-container rounded-tl-lg shadow-[0_0_8px_rgba(79,70,229,0.8)]"></div>
+<div class="absolute top-0 right-0 w-7 h-7 border-t-[3px] border-r-[3px] border-primary-container rounded-tr-lg shadow-[0_0_8px_rgba(79,70,229,0.8)]"></div>
+<div class="absolute bottom-0 left-0 w-7 h-7 border-b-[3px] border-l-[3px] border-primary-container rounded-bl-lg shadow-[0_0_8px_rgba(79,70,229,0.8)]"></div>
+<div class="absolute bottom-0 right-0 w-7 h-7 border-b-[3px] border-r-[3px] border-primary-container rounded-br-lg shadow-[0_0_8px_rgba(79,70,229,0.8)]"></div>
+<!-- Central Aim Target -->
+<div class="w-12 h-12 border border-white/20 rounded-lg flex items-center justify-center">
+<div class="w-1.5 h-1.5 bg-primary-container rounded-full"></div>
+</div>
+<!-- Laser Scanning Bar -->
+<div class="scanner-laser absolute inset-x-2 h-[2px] bg-gradient-to-r from-transparent via-primary-container to-transparent shadow-[0_0_12px_#4f46e5]"></div>
+<!-- Secondary Inner Glow Ring -->
+<div class="absolute inset-2 border border-primary/20 rounded-md pointer-events-none"></div>
+</div>
+<!-- Bottom Camera HUD -->
+<div class="absolute bottom-3 inset-x-4 flex items-center justify-between text-[11px] text-zinc-400">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-emerald-400">lock</span> AES-256 Rotating Token
+            </span>
+<span class="tabular-nums font-mono text-[11px] text-zinc-300" id="tokenClock">TTL: 11s</span>
+</div>
+</div>
+<!-- Scanner Microcopy & Guidance -->
+<div class="p-space-md bg-surface-container-lowest border-t border-surface-container">
+<p class="font-body-sm text-body-sm text-secondary text-center leading-relaxed">
+            Align the rotating QR code projected on the classroom board inside the frame to mark attendance.
+          </p>
+<div class="mt-2.5 flex items-center justify-center gap-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+<span class="material-symbols-outlined text-[13px] text-amber-600">timer</span> Rotates every 15s
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-surface-container-highest">
+<span class="material-symbols-outlined text-[13px]">bluetooth</span> Beacon Paired
+            </span>
+</div>
+</div>
+</section>
+<!-- Section 3: Fallback Code Input -->
+<section class="bg-surface-container-lowest border border-surface-container rounded-xl p-space-md">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary">pin</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface text-[15px]">Manual Fallback PIN</h2>
+</div>
+<span class="text-caption font-caption text-secondary">Option 2</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mb-3">
+          Unable to scan? Enter 6-digit session PIN displayed under the projector QR
+        </p>
+<!-- 6 PIN Input Cells -->
+<form class="space-y-3" onsubmit="event.preventDefault(); triggerSimulation('success');">
+<div class="grid grid-cols-6 gap-2">
+<input class="h-11 text-center font-headline-sm text-headline-sm rounded-lg border border-surface-container-highest bg-surface-bright focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" maxlength="1" type="text" value="8"/>
+<input class="h-11 text-center font-headline-sm text-headline-sm rounded-lg border border-surface-container-highest bg-surface-bright focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" maxlength="1" type="text" value="2"/>
+<input class="h-11 text-center font-headline-sm text-headline-sm rounded-lg border border-surface-container-highest bg-surface-bright focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" maxlength="1" type="text" value="4"/>
+<input class="h-11 text-center font-headline-sm text-headline-sm rounded-lg border border-surface-container-highest bg-surface-bright focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" maxlength="1" placeholder="•" type="text"/>
+<input class="h-11 text-center font-headline-sm text-headline-sm rounded-lg border border-surface-container-highest bg-surface-bright focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" maxlength="1" placeholder="•" type="text"/>
+<input class="h-11 text-center font-headline-sm text-headline-sm rounded-lg border border-surface-container-highest bg-surface-bright focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" maxlength="1" placeholder="•" type="text"/>
+</div>
+<button class="w-full h-10 rounded-lg bg-primary-container text-white font-label-md text-label-md hover:bg-primary transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99]" type="submit">
+<span>Submit Attendance</span>
+<span class="material-symbols-outlined text-[17px]">arrow_forward</span>
+</button>
+</form>
+</section>
+<!-- Section 4: Comprehensive Scan States & Verification Showcase -->
+<section class="bg-surface-container-lowest border border-surface-container rounded-xl p-space-md space-y-space-md">
+<div class="flex items-center justify-between border-b border-surface-container pb-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Verification State Switcher</h2>
+<p class="font-caption text-caption text-secondary">Preview terminal response handling</p>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container text-secondary">Demo Mode</span>
+</div>
+<!-- State Selector Pill Buttons -->
+<div class="grid grid-cols-4 gap-1 p-1 bg-surface-container rounded-lg">
+<button class="py-1 px-1.5 text-center text-[11px] font-medium rounded transition-all bg-surface-container-lowest text-primary shadow-xs font-semibold" id="btn-stateA" onclick="showState('stateA')" type="button">Success</button>
+<button class="py-1 px-1.5 text-center text-[11px] font-medium rounded transition-all text-secondary hover:text-on-surface" id="btn-stateB" onclick="showState('stateB')" type="button">Expired</button>
+<button class="py-1 px-1.5 text-center text-[11px] font-medium rounded transition-all text-secondary hover:text-on-surface" id="btn-stateC" onclick="showState('stateC')" type="button">Duplicate</button>
+<button class="py-1 px-1.5 text-center text-[11px] font-medium rounded transition-all text-secondary hover:text-on-surface" id="btn-stateD" onclick="showState('stateD')" type="button">Out Range</button>
+</div>
+<!-- STATE A: SUCCESSFUL ATTENDANCE CONFIRMATION -->
+<div class="verification-card space-y-3" id="stateA">
+<div class="p-space-md rounded-xl bg-emerald-50 border border-emerald-200">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">check_circle</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-emerald-800">State Verified</span>
+<span class="text-[11px] text-emerald-700 font-mono">CODE 200 OK</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-emerald-950 font-bold mt-0.5">
+                  Attendance Recorded Successfully!
+                </h3>
+<p class="font-body-sm text-body-sm text-emerald-800 mt-0.5">
+                  CS303 Data Structures • Room 204
+                </p>
+</div>
+</div>
+<!-- Success Metric Details -->
+<div class="mt-3 pt-3 border-t border-emerald-200/80 grid grid-cols-2 gap-2 text-[12px]">
+<div class="bg-white/80 rounded-lg p-2 border border-emerald-100">
+<div class="text-emerald-700 font-caption text-caption">Timestamp</div>
+<div class="font-tabular-mono font-medium text-emerald-950 mt-0.5">Today, 11:18:24 AM</div>
+</div>
+<div class="bg-white/80 rounded-lg p-2 border border-emerald-100">
+<div class="text-emerald-700 font-caption text-caption">Session Status</div>
+<div class="font-medium text-emerald-900 mt-0.5 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Present Marked
+                </div>
+</div>
+</div>
+<div class="mt-2 p-2 rounded-lg bg-emerald-100/60 flex items-center justify-between text-body-sm">
+<span class="text-emerald-900 font-medium">Updated Attendance:</span>
+<div class="text-right">
+<span class="font-headline-sm text-headline-sm text-emerald-800 font-bold">88.6%</span>
+<span class="text-[11px] text-emerald-700 ml-1 font-medium">(+1 class)</span>
+</div>
+</div>
+<div class="mt-2 flex items-center justify-between text-[11px] text-emerald-800 px-1 font-medium">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">shield</span> Safe Margin: Can skip 5 more classes
+              </span>
+<span class="text-emerald-700 font-semibold">&gt; 75% Safe</span>
+</div>
+</div>
+</div>
+<!-- STATE B: EXPIRED QR TOKEN ERROR -->
+<div class="verification-card hidden space-y-3" id="stateB">
+<div class="p-space-md rounded-xl bg-amber-50 border border-amber-200">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">timer_off</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-amber-800">Token Desynchronized</span>
+<span class="text-[11px] text-amber-700 font-mono">ERR_TOKEN_EXPIRED</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-amber-950 font-bold mt-0.5">
+                  QR Code Expired
+                </h3>
+<p class="font-body-sm text-body-sm text-amber-800 mt-1 leading-relaxed">
+                  The 15-second dynamic token has rotated. Please scan the newly displayed QR code on the classroom board.
+                </p>
+</div>
+</div>
+<div class="mt-3 pt-3 border-t border-amber-200 flex items-center justify-between">
+<button class="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-[12px] font-medium hover:bg-amber-700 flex items-center gap-1 transition-all" onclick="showState('stateA')" type="button">
+<span class="material-symbols-outlined text-[15px]">refresh</span> Rescan Current Frame
+              </button>
+<span class="text-[11px] text-amber-700 font-medium">Rotation Sync: 4s ago</span>
+</div>
+</div>
+</div>
+<!-- STATE C: DUPLICATE ATTENDANCE WARNING -->
+<div class="verification-card hidden space-y-3" id="stateC">
+<div class="p-space-md rounded-xl bg-blue-50 border border-blue-200">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-blue-800">Duplicate Submission</span>
+<span class="text-[11px] text-blue-700 font-mono">STATUS 409 ALREADY_LOGGED</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-blue-950 font-bold mt-0.5">
+                  Already Marked
+                </h3>
+<p class="font-body-sm text-body-sm text-blue-800 mt-1 leading-relaxed">
+                  Your attendance for CS303 (Period 3) was already verified at 11:16:02 AM today by the server.
+                </p>
+</div>
+</div>
+<div class="mt-3 pt-2.5 border-t border-blue-200 flex items-center justify-between text-[11px] text-blue-800">
+<span class="flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px]">done_all</span> No duplicate action required
+              </span>
+<a class="underline text-blue-900 font-semibold hover:text-blue-700" href="#">View Logs</a>
+</div>
+</div>
+</div>
+<!-- STATE D: INVALID QR / OUT OF RANGE ERROR -->
+<div class="verification-card hidden space-y-3" id="stateD">
+<div class="p-space-md rounded-xl bg-red-50 border border-red-200">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">location_off</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold tracking-wider uppercase text-red-800">Fence Violation</span>
+<span class="text-[11px] text-red-700 font-mono">ERR_GEO_BEACON_MISS</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-red-950 font-bold mt-0.5">
+                  Verification Failed: Out of Range
+                </h3>
+<p class="font-body-sm text-body-sm text-red-800 mt-1 leading-relaxed">
+                  You are outside the classroom beacon range (Room 204). Please ensure Bluetooth &amp; Location services are enabled and you are inside the classroom.
+                </p>
+</div>
+</div>
+<div class="mt-3 pt-3 border-t border-red-200 flex items-center justify-between">
+<button class="px-3 py-1.5 rounded-lg bg-red-600 text-white text-[12px] font-medium hover:bg-red-700 flex items-center gap-1 transition-all" type="button">
+<span class="material-symbols-outlined text-[15px]">bluetooth_searching</span> Retry Beacon Ping
+              </button>
+<span class="text-[11px] text-red-700 font-mono">Accuracy: ±28m (Required &lt; 8m)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Security / Academic Trust Footer Info -->
+<footer class="pt-2 pb-4 text-center">
+<div class="flex items-center justify-center gap-1.5 text-caption font-caption text-secondary">
+<span class="material-symbols-outlined text-[14px] text-secondary">security</span>
+<span>ClassRadar Anti-Proxy Geo-Fence Engine v4.2</span>
+</div>
+<p class="text-[10px] text-secondary/70 mt-1 font-caption">
+          Token sync: 120ms • University ID: 21CS042 • IP: 10.204.14.88
+        </p>
+</footer>
+</main>
+<!-- Mobile Bottom Navigation (5 tabs: Home, Timetable, Scan QR [Active], Attendance, Profile) -->
+<nav class="fixed bottom-0 max-w-[430px] w-full bg-surface-container-lowest/95 backdrop-blur z-40 px-space-xs py-1.5 border-t border-surface-container shadow-md flex items-center justify-around">
+<!-- Tab 1: Home -->
+<a class="flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-secondary hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="text-[11px] font-medium mt-0.5">Home</span>
+</a>
+<!-- Tab 2: Timetable -->
+<a class="flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-secondary hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span class="text-[11px] font-medium mt-0.5">Timetable</span>
+</a>
+<!-- Tab 3: Scan QR (Prominent Active Destination) -->
+<a class="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-primary font-semibold relative" href="#">
+<div class="w-10 h-10 -mt-5 rounded-full bg-primary-container text-white flex items-center justify-center shadow-md border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-[22px]">qr_code_scanner</span>
+</div>
+<span class="text-[11px] text-primary font-semibold mt-1">Scan QR</span>
+</a>
+<!-- Tab 4: Attendance -->
+<a class="flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-secondary hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+<span class="text-[11px] font-medium mt-0.5">Attendance</span>
+</a>
+<!-- Tab 5: Profile -->
+<a class="flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-secondary hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">account_circle</span>
+<span class="text-[11px] font-medium mt-0.5">Profile</span>
+</a>
+</nav>
+</div>
+<script>
+    // Tab switching simulation for demo
+    function showState(stateId) {
+      const cards = document.querySelectorAll('.verification-card');
+      cards.forEach(card => card.classList.add('hidden'));
+      
+      const targetCard = document.getElementById(stateId);
+      if (targetCard) {
+        targetCard.classList.remove('hidden');
+      }
+
+      const buttons = ['stateA', 'stateB', 'stateC', 'stateD'];
+      buttons.forEach(btn => {
+        const el = document.getElementById('btn-' + btn);
+        if (btn === stateId) {
+          el.className = 'py-1 px-1.5 text-center text-[11px] font-semibold rounded transition-all bg-surface-container-lowest text-primary shadow-xs';
+        } else {
+          el.className = 'py-1 px-1.5 text-center text-[11px] font-medium rounded transition-all text-secondary hover:text-on-surface';
+        }
+      });
+    }
+
+    // Dynamic TTL Countdown Simulation
+    let ttlSeconds = 11;
+    setInterval(() => {
+      ttlSeconds--;
+      if (ttlSeconds < 1) ttlSeconds = 15;
+      const clock = document.getElementById('tokenClock');
+      if (clock) {
+        clock.textContent = 'TTL: ' + ttlSeconds + 's';
+      }
+    }, 1000);
+
+    // Micro interaction handlers
+    let torchOn = false;
+    function toggleTorch() {
+      torchOn = !torchOn;
+      const btn = document.getElementById('torchBtn');
+      if (torchOn) {
+        btn.classList.add('bg-amber-400', 'text-black');
+        btn.classList.remove('bg-white/10', 'text-white');
+      } else {
+        btn.classList.remove('bg-amber-400', 'text-black');
+        btn.classList.add('bg-white/10', 'text-white');
+      }
+    }
+
+    function flipCam() {
+      const laser = document.querySelector('.scanner-laser');
+      laser.style.opacity = '0.3';
+      setTimeout(() => laser.style.opacity = '1', 300);
+    }
+
+    function resetScanner() {
+      showState('stateA');
+      ttlSeconds = 15;
+    }
+
+    function triggerSimulation(mode) {
+      showState('stateA');
+    }
+  </script>
+</body></html>

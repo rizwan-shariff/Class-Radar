@@ -1,0 +1,472 @@
+# ClassRadar — Complete Frontend Development Handoff Specification
+
+**Product:** ClassRadar (*"Your Campus. In Sync."*)  
+**Design System Identity:** Academic Utility Modern  
+**Version:** 2.0.0 (Production Handoff Spec)  
+**Font Stack:** Inter (Google Fonts), Tabular Figures / Monospace for IDs & Telemetry  
+**Color Tokens Reference:** Indigo Primary (`#4F46E5`), Emerald Safe/Present (`#10B981`), Amber Substituted/Warning (`#F59E0B`), Rose Critical/Debarred (`#EF4444`), Surface Neutral (`#FAFAFC` / `#FFFFFF`), Dark Navy Display Canvas (`#0A0F1D`).
+
+---
+
+## 1. Authentication & Portal Gateway
+
+### Screen 1: Institutional Portal Login & Role Authentication
+* **Screen Name:** Institutional Portal Login & Role Authentication (`{{DATA:SCREEN:SCREEN_7}}`)
+* **Role:** Unauthenticated Guest / All Institutional Personas (Student, Faculty, Administrator)
+* **Purpose:** Single sign-on and institutional credentials verification with dual-factor role selection, multi-campus mesh server connectivity display, and security compliance badges.
+* **Navigation Entry Point:** Direct URL route `/login` or default redirect when unauthenticated session token is absent.
+* **Component Hierarchy:**
+  * `PortalLayout` (Two-column split on desktop)
+    * `LeftBrandHeroPanel`
+      * `BrandHeader` (ClassRadar official SVG logo + "Your Campus. In Sync.")
+      * `InstitutionalEndorsementCard` (Dean's official quote, accreditation badges: NAAC A++, UGC Autonomy)
+      * `ActiveTelemetryStatus` (Mesh network status, 3 Engineering blocks online)
+    * `RightAuthFormContainer`
+      * `RoleSelectorTabs` (Segmented control: Student, Faculty, Admin)
+      * `LoginForm`
+        * `InstitutionalIDInput` (USN for students, Faculty ID for professors, Staff ID for admins)
+        * `PasswordInput` with Show/Hide toggle
+        * `CampusDomainSelect` (Main Campus, City Annex, Computing Center)
+        * `RememberMeCheckbox` & `ForgotPasswordLink`
+        * `SubmitCTAButton` ("Sign In to ClassRadar")
+      * `SSOAlternativeGroup` (Google Workspace for Education, Microsoft 365 Campus OAuth)
+      * `SecurityFooter` (256-bit TLS, FERPA/UGC Data Compliance)
+* **Buttons & Expected Actions:**
+  * `Role Tabs (Student / Faculty / Admin)`: Switches active authentication role scheme, dynamic input placeholder, and validation rules in local state.
+  * `Sign In to ClassRadar (Primary)`: Submits credentials to `/api/v1/auth/login`. On 200 OK, stores JWT/session cookie and redirects to respective role portal.
+  * `SSO Buttons (Google / Microsoft)`: Redirects window to OAuth provider redirect URL `/api/v1/auth/oauth/{provider}`.
+  * `Forgot Credentials`: Triggers password recovery drawer/modal or institutional IT ticket handoff.
+* **Forms & Input Fields:**
+  * `Institutional Identifier`: Text field with client-side pattern validation (e.g., student USN regex `^[1-4][A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{3}$`).
+  * `Password`: Password masked input, min 8 characters.
+  * `Campus Node`: Native select dropdown for institutional branch node.
+* **Required UI States:**
+  * *Default / Rest*: Clean input wells, student tab selected by default.
+  * *Active / Focus*: Indigo focus ring (`ring-2 ring-indigo-500/20 border-indigo-600`).
+  * *Loading / Submitting*: Disabled submit button with spinner, input fields read-only.
+  * *Authentication Error*: Rose border on credential inputs with banner: `"Invalid Institutional Credentials or Unassigned Role"`.
+  * *Network Disconnect*: Amber alert when campus server gateway times out.
+* **Responsive Behaviour:**
+  * Desktop (1366px–1920px): 50/50 split canvas with left brand storytelling and right auth container.
+  * Tablet (768px): Stacks brand hero banner above the authentication card.
+  * Mobile (375px–430px): Hides promotional quote hero, displays full-width mobile card with touch-friendly 44px input targets.
+* **Relevant Reusable Components:** `Button` (Primary, Secondary, Ghost), `Input`, `Select`, `Badge`.
+* **Backend Integration Requirements:**
+  * `POST /api/v1/auth/login` (Body: `{ identifier, password, role, campus_id }`)
+  * `GET /api/v1/auth/sso/providers`
+  * `GET /api/v1/telemetry/mesh-health` (Campus ping & live status)
+
+---
+
+## 2. Student Portal
+
+### Screen 2: Student Timetable, Attendance & Bunk Calculator
+* **Screen Name:** Student Timetable, Attendance & Bunk Calculator (`{{DATA:SCREEN:SCREEN_11}}`)
+* **Role:** Student
+* **Purpose:** Daily and weekly academic scheduling, quick-glance class alerts, UGC 75% attendance threshold monitoring, and what-if bunk sandbox.
+* **Navigation Entry Point:** Authenticated default route `/student/dashboard` or `/student/timetable`.
+* **Component Hierarchy:**
+  * `TopNavBar` (Brandmark, Term pill, Live sync beacon, Notification bell, Role switcher, Avatar)
+  * `SideNavBar` (Dashboard, Schedule, Attendance, Free Rooms, Profile)
+  * `StudentMainContainer`
+    * `EmergencyBroadcastBanner` (Real-time class relocations/substitutions)
+    * `MetricsRow` (Overall Attendance %, Today's Classes Remaining, Safe Bunk Margin, Next Class)
+    * `TimetableCalendarGrid`
+      * `DaySelectorTabs` (Mon through Sat)
+      * `PeriodSlotCards` (P1 to P8 with room code, instructor, status badge, live progress ring)
+    * `RightUtilityRail`
+      * `UGCAttendanceRingWidget` (81.8% radial progress, 75% critical cutoff line)
+      * `WhatIfBunkSandboxCard` (Interactive range sliders: Skip vs. Attend with real-time recalculation)
+      * `VacantRoomNearbyList` (Free study spaces)
+* **Buttons & Expected Actions:**
+  * `Day Selector Tabs`: Filters active period slot list to chosen weekday without page reload.
+  * `Launch QR Scanner CTA`: Navigates to `/student/scan-qr` or opens scanner modal.
+  * `Simulate Sliders`: Local client-side mathematical recalculation of projected attendance.
+  * `Dispute Attendance`: Triggers attendance discrepancy grievance form modal.
+* **Forms & Input Fields:**
+  * `Classes to Skip Slider`: Range input (0 to 10).
+  * `Classes to Attend Slider`: Range input (0 to 10).
+* **Required UI States:**
+  * *Live Class*: Indigo border with glowing pulse beacon.
+  * *Substituted Class*: Amber left-border with replacement faculty name pill.
+  * *Cancelled Class*: Rose background tint, struck-out text, cancellation reason.
+  * *Attendance Deficit Warning*: Rose indicator if overall percentage < 75%.
+* **Responsive Behaviour:**
+  * Desktop: 3-column layout (Sidebar + Grid + Sandbox Rail).
+  * Tablet: Sandbox rail reflows below timetable schedule.
+  * Mobile: Covered natively by dedicated PWA screen.
+* **Relevant Reusable Components:** `TopNavBar`, `SideNavBar`, `Badge`, `card-slot`, `widget-kpi`, `Modal`.
+* **Backend Integration Requirements:**
+  * `GET /api/v1/student/timetable/weekly`
+  * `GET /api/v1/student/attendance/summary`
+  * `GET /api/v1/student/notifications/urgent`
+
+---
+
+### Screen 3: Student Attendance & Bunk Management Hub
+* **Screen Name:** Student Attendance & Bunk Management Hub (`{{DATA:SCREEN:SCREEN_8}}`)
+* **Role:** Student
+* **Purpose:** Comprehensive course-by-course audit trail, verified QR timestamps, debarment prediction sandbox, and attendance certificate export.
+* **Navigation Entry Point:** Top nav or side rail link `/student/attendance`.
+* **Component Hierarchy:**
+  * `TopNavBar` & `SideNavBar`
+  * `AttendanceAuditContainer`
+    * `HeadlineHeader` with UGC 75% Regulatory Compliance Status Badge
+    * `AggregateSummaryKPIs` (Total Sessions Conducted, Attended, Medical Leave Buffer, Danger Zone Courses)
+    * `SubjectWiseAttendanceCards`
+      * Course code, name, faculty in-charge
+      * Attended / Total tally (e.g. `24 / 28`)
+      * Subject-specific percentage badge (`85.7% SAFE`, `68.2% DEFICIT`)
+      * Class-by-class safe bunk margin (`Can skip 2 classes` or `Must attend next 3 classes`)
+    * `SessionAuditLogTable`
+      * Columns: Date, Slot, Subject, Method (QR Verified / Beacon / Manual Override), Status, Action
+    * `InteractiveBunkSandboxDrawer`
+* **Buttons & Expected Actions:**
+  * `Download Attendance Receipt`: Triggers client-side PDF generation or fetches signed PDF `/api/v1/student/attendance/export-receipt`.
+  * `Dispute Discrepancy`: Opens modal submitting ticket with QR scan timestamp proof to faculty.
+  * `Subject Filter Dropdown`: Filters session log table by course ID.
+* **Forms & Input Fields:**
+  * `Filter by Subject`: Select dropdown.
+  * `Date Range Picker`: From and To date inputs.
+* **Required UI States:**
+  * *Safe (>= 75%)*: Emerald badges, positive buffer calculation.
+  * *Warning (75%–79%)*: Amber badge indicating borderline status.
+  * *Debarment Danger (< 75%)*: Rose badge, required recovery target formula highlighted.
+  * *Empty State*: Clean illustration when no classes match chosen date range.
+* **Responsive Behaviour:**
+  * Desktop: High-density data table with inline action pills.
+  * Tablet/Mobile: Cards replace table rows; horizontal scroll enabled on audit grid.
+* **Relevant Reusable Components:** `Table`, `Badge`, `Button`, `Input`, `Select`.
+* **Backend Integration Requirements:**
+  * `GET /api/v1/student/attendance/courses`
+  * `GET /api/v1/student/attendance/logs?course_id={id}&page={n}`
+  * `POST /api/v1/student/attendance/dispute` (Body: `{ session_id, reason, proof_data }`)
+
+---
+
+## 3. Faculty Portal
+
+### Screen 4: Faculty Attendance & Lecture Operations Hub
+* **Screen Name:** Faculty Attendance & Lecture Operations Hub (`{{DATA:SCREEN:SCREEN_12}}`)
+* **Role:** Faculty / Course Instructor / Department Head
+* **Purpose:** Faculty weekly workload inspection, daily lecture launchpad, manual attendance roll call, and substitution duty alerts.
+* **Navigation Entry Point:** Authenticated default route `/faculty/dashboard`.
+* **Component Hierarchy:**
+  * `TopNavBar` & `SideNavBar` (Faculty variants)
+  * `FacultyOperationsContainer`
+    * `WorkloadSummaryCards` (Weekly Hours: 18 hrs, Active Classes Today, Pending Substitution Requests, Roster Sync Health)
+    * `UpcomingLectureBanner` (Next slot countdown, 1-click "Launch QR Attendance" CTA)
+    * `WeeklyTeachingSchedule`
+      * Day-wise slot distribution with batch identifiers (e.g. CSE-A, Batch B)
+    * `QuickRosterDrawer` (Live student presence counts)
+* **Buttons & Expected Actions:**
+  * `Launch QR Session (Primary CTA)`: Navigates to `/faculty/session-live` (`{{DATA:SCREEN:SCREEN_10}}`).
+  * `Mark Self Absence`: Opens leave application workflow.
+  * `Accept / Decline Substitution`: Sends API payload accepting peer substitution duty.
+* **Forms & Input Fields:**
+  * `Slot Notes Input`: Quick memo field for lesson plan notes.
+* **Required UI States:**
+  * *Ready to Launch*: Highlighted next lecture card with glowing green border.
+  * *Class Completed*: Muted card with checkmark and final roll count (`58/62`).
+  * *Substitution Assigned*: Amber badge indicating covering for peer faculty.
+* **Responsive Behaviour:**
+  * Desktop: Full weekly workload matrix and side drawer.
+  * Tablet: Collapsible weekly agenda view with swipeable days.
+* **Relevant Reusable Components:** `TopNavBar`, `SideNavBar`, `widget-kpi`, `card-slot`, `Badge`, `Button`.
+* **Backend Integration Requirements:**
+  * `GET /api/v1/faculty/workload`
+  * `GET /api/v1/faculty/schedule/today`
+  * `POST /api/v1/faculty/substitution/respond`
+
+---
+
+### Screen 5: Faculty Live QR Attendance Engine & Roster Control
+* **Screen Name:** Faculty Live QR Attendance Engine & Roster Control (`{{DATA:SCREEN:SCREEN_10}}`)
+* **Role:** Faculty
+* **Purpose:** Live classroom dynamic TOTP QR code broadcaster, real-time presence telemetry counter, late scan controls, and live student attendance overrides.
+* **Navigation Entry Point:** Direct action from Faculty Hub `/faculty/session/{session_id}/live`.
+* **Component Hierarchy:**
+  * `LiveHeader` (Course: CS302, Room 301, Period 3, Live Timer)
+  * `TwoColumnEngineLayout`
+    * `LeftDynamicQRPane`
+      * `RotatingQRCodeContainer` (SVG QR code, auto-refreshes every 15s)
+      * `TOTPTimerCountdown` (Progress ring with "15s Security Cycle")
+      * `SessionPasscodeFallback` (6-digit fallback PIN: `#301-842`)
+      * `SecurityProtocolPill` (Rotating cryptographic nonce, geofence active)
+      * `SessionControls` (Pause QR, Extend Duration, Lock Roster, End Class)
+    * `RightLiveRosterPane`
+      * `LiveHeadcountBar` (e.g. 56 Present / 8 Absent / 87.5% attendance)
+      * `LiveStudentRosterTable`
+        * Columns: USN, Student Name, Check-in Time, Device Status, Action Overrides
+        * Override buttons: `Verify Present`, `Excuse Late`, `Revoke Scan`
+* **Buttons & Expected Actions:**
+  * `Pause / Resume QR`: Pauses rotation and invalidates active token on backend.
+  * `Lock Session`: Closes check-in permanently; sets remaining unmarked students to absent.
+  * `Verify Present (Row Action)`: Manually sets student status to present (`POST /api/v1/attendance/manual-override`).
+  * `Excuse Late (Row Action)`: Marks student present with late flag.
+  * `Revoke (Row Action)`: Revokes verified status if student is caught proxying.
+* **Forms & Input Fields:**
+  * `Student Search Filter`: Instant text filter by USN or student name.
+* **Required UI States:**
+  * *QR Active*: Rotating indicator, countdown active.
+  * *QR Expiring*: Amber warning indicator during the last 3 seconds of a cycle.
+  * *Roster Locked*: Greyed-out QR pane, read-only audit status.
+* **Responsive Behaviour:**
+  * Desktop (Primary target for podium laptops): Split 50/50 view.
+  * Tablet: QR engine stacks above live roster table.
+* **Relevant Reusable Components:** `Button`, `Table`, `Badge`, `Input`.
+* **Backend Integration Requirements:**
+  * `WebSocket /ws/v1/attendance/live/{session_id}` (Pushes real-time scans as students check in)
+  * `GET /api/v1/attendance/qr-token?session_id={id}` (Fetches next signed 15s TOTP token)
+  * `POST /api/v1/attendance/session/lock`
+  * `POST /api/v1/attendance/override` (Body: `{ student_usn, status, session_id }`)
+
+---
+
+## 4. Admin Portal
+
+### Screen 6: Admin Timetable, Substitutions & Analytics Console
+* **Screen Name:** Admin Timetable, Substitutions & Analytics Console (`{{DATA:SCREEN:SCREEN_13}}`)
+* **Role:** Institutional Administrator / Academic Dean / Department Coordinator
+* **Purpose:** Master campus scheduling, faculty leave tracking, AI-assisted automated substitution delegation, room clash resolution, and institutional debarment analytics.
+* **Navigation Entry Point:** Authenticated route `/admin/dashboard` or `/admin/timetable-master`.
+* **Component Hierarchy:**
+  * `TopNavBar` & `SideNavBar` (Admin role privileges)
+  * `AdminConsoleLayout`
+    * `CampusKPIHeader` (Room Occupancy: 84%, Faculty on Leave: 4, Debarment Risk Rate: 6.2%, Active Clashes: 0)
+    * `TabNavigation` (Master Timetable, Substitution Desk, Room Matrix, Debarment Analytics)
+    * `SubstitutionDeskWidget`
+      * Unassigned absence cards (e.g. Prof. Ananya Sen - Medical Leave)
+      * Matchmaker Recommendation cards (e.g. Dr. P. Rao - 98% Competence Match, Free Slot)
+      * Instant Assign CTA & Student Broadcast preview
+    * `MasterTimetableMatrix`
+      * Department selector (CSE, ECE, Mech), Semester selector (Sem III, V, VII)
+      * Slot grid with visual conflict validation markers
+    * `InstitutionalDebarmentTable`
+      * High-risk student roster (<75%) with one-click guardian notice dispatch
+* **Buttons & Expected Actions:**
+  * `Import Timetable CSV`: Triggers administrative CSV bulk import modal/wizard.
+  * `1-Click Assign Substitute`: Dispatches `POST /api/v1/admin/substitution/assign` and triggers campus WebSocket notification to affected students.
+  * `Export Department Analytics`: Exports CSV/Excel roster of debarred students.
+  * `Resolve Clash`: Opens conflict modal to swap room or period.
+* **Forms & Input Fields:**
+  * `Department Filter`: Select dropdown.
+  * `Semester Filter`: Select dropdown.
+  * `Search Faculty / Student`: Text input filter.
+* **Required UI States:**
+  * *No Clashes*: Emerald banner `"Zero Timetable Clashes Detected"`.
+  * *Active Conflict*: Rose blinking banner with direct link to conflicting room slot.
+  * *Substitution Pending*: Amber counter badge in sidebar and top nav.
+* **Responsive Behaviour:**
+  * Desktop (Primary admin workstation): Dense multi-pane operational grid.
+  * Tablet: Tab navigation isolates matrix vs substitution desk.
+* **Relevant Reusable Components:** `TopNavBar`, `SideNavBar`, `Table`, `Badge`, `Button`, `Select`, `Input`.
+* **Backend Integration Requirements:**
+  * `GET /api/v1/admin/timetable/master?dept={id}&sem={sem}`
+  * `GET /api/v1/admin/substitutions/pending`
+  * `POST /api/v1/admin/substitutions/matchmaker/assign`
+  * `GET /api/v1/admin/analytics/debarment`
+
+---
+
+## 5. Mobile Progressive Web App (PWA)
+
+### Screen 7: Student Mobile PWA Dashboard & Timetable
+* **Screen Name:** Student Mobile PWA Dashboard & Timetable (`{{DATA:SCREEN:SCREEN_6}}`)
+* **Role:** Student (Mobile Device 375px/390px)
+* **Purpose:** On-the-go student companion: today's schedule timeline, live active period card, instant substitution alert banner, safe bunk margin pill, and free study hall preview.
+* **Navigation Entry Point:** Direct mobile entry route `/m/home`.
+* **Component Hierarchy:**
+  * `MobileAppHeader` (ClassRadar brandmark, campus mesh pill, notification bell with unread badge)
+  * `ActiveUrgentBanner` (Amber substitution notice with "View Route" CTA)
+  * `TodayOverviewKPI` (Attendance % with radial mini-ring, Classes remaining today)
+  * `LiveClassHeroCard` (Period 3 in progress, room EB3-301, professor avatar, progress bar)
+  * `TimelineScheduleList` (Periods 1 through 8 with status chips)
+  * `VacantRoomsNearMeSection` (Horizontal swipeable cards of free classrooms)
+  * `BottomNavBar` (Home, Schedule, Center Elevated Scan QR FAB, Attendance, Profile)
+* **Buttons & Expected Actions:**
+  * `Center Scan QR FAB`: Immediate tap target with 48px boundary; navigates to `/m/scan` (`{{DATA:SCREEN:SCREEN_9}}`).
+  * `View Route / Room Nav`: Opens campus mini-map modal directing student to substituted classroom.
+  * `Bottom Nav Tabs`: Instant tab switching without full reload.
+* **Forms & Input Fields:** None (pure mobile glanceable display).
+* **Required UI States:**
+  * *Offline PWA Cache*: Subtle banner when offline; serves cached timetable from ServiceWorker.
+  * *Live Session In Progress*: Hero card pulsing border.
+* **Responsive Behaviour:** Optimized specifically for 375px–430px portrait touch ergonomics. Meets all 48px touch envelope guidelines with safe-area padding for iOS and Android navigation bars.
+* **Relevant Reusable Components:** `BottomNavBar`, `Badge`, `Button`.
+* **Backend Integration Requirements:**
+  * `GET /api/v1/mobile/student/summary`
+  * `GET /api/v1/mobile/student/schedule/today`
+
+---
+
+### Screen 8: Student Mobile QR Scanner & Attendance Verification
+* **Screen Name:** Student Mobile QR Scanner & Attendance Verification (`{{DATA:SCREEN:SCREEN_9}}`)
+* **Role:** Student (Mobile Device 375px/390px)
+* **Purpose:** Camera-driven classroom QR check-in, beacon proximity validation, fallback 6-digit PIN input, and cryptographic scan confirmation.
+* **Navigation Entry Point:** Tap center FAB on Mobile Bottom Nav `/m/scan`.
+* **Component Hierarchy:**
+  * `ScannerHeader` (Close X button, Torch toggle button, Class info: CS302 • Room 301)
+  * `CameraViewportContainer`
+    * `ReticleOverlay` (Square target with scanning laser animation line)
+    * `GeofenceBeaconPill` ("Room 301 Beacon Verified • <15m")
+  * `ScannerInstructions` ("Align classroom screen QR within frame")
+  * `FallbackPINInputGroup` (Manual 6-digit entry with "Submit Code" button)
+  * `AttendanceResultDrawer` (Animated green checkmark modal on scan success)
+* **Buttons & Expected Actions:**
+  * `Torch Toggle`: Toggles device camera flashlight via WebRTC MediaStream API.
+  * `Submit PIN`: Submits manually entered passcode if camera cannot focus on projector screen.
+  * `Close / Back`: Returns to `/m/home`.
+* **Forms & Input Fields:**
+  * `6-Digit Passcode Input`: Tabular numeric segmented input cells.
+* **Required UI States:**
+  * *Camera Scanning*: Animated laser guide line.
+  * *Verifying Token*: Spinner dialog overlay.
+  * *Success State*: Green checkmark badge with sound/vibration haptic trigger and confirmation receipt.
+  * *Error State (Invalid / Expired / Out of Range)*: Red warning dialog: `"Expired QR Session. Scan latest code on classroom display."`
+* **Responsive Behaviour:** Full-screen camera viewport locked to 100vh mobile canvas.
+* **Relevant Reusable Components:** `Button`, `Input`, `Badge`.
+* **Backend Integration Requirements:**
+  * `POST /api/v1/attendance/verify-scan` (Body: `{ qr_hash, device_id, gps_coords, session_id }`)
+  * `POST /api/v1/attendance/verify-pin` (Body: `{ pin_code, session_id }`)
+
+---
+
+## 6. Lecture Hall & Ambient Displays
+
+### Screen 9: Lecture Hall & Classroom Display (Dark Mode)
+* **Screen Name:** Lecture Hall & Classroom Display (Dark Mode) (`{{DATA:SCREEN:SCREEN_2}}`)
+* **Role:** Ambient Display / Large Screen Projector / Smart TV
+* **Purpose:** Distance-legible high-contrast 16:9 dark-mode display for classroom projection: live class progress, active attendance roll counter, TOTP quick-check QR container, and urgent broadcast ticker.
+* **Navigation Entry Point:** Dedicated kiosk URL route `/kiosk/room/{room_id}` (e.g. `/kiosk/room/EB3-301`).
+* **Component Hierarchy:**
+  * `KioskHeader`
+    * Room Identifier: `LECTURE HALL 301` (Engineering Block 3, 3rd Floor, Cap: 90)
+    * Status: Glowing emerald `● OCCUPIED`
+    * High-visibility digital clock (`06:14:55 AM`, Date, Academic Term)
+  * `MainStageGrid` (Two-column 60/40 display)
+    * `CurrentClassHero`
+      * `LiveBadge` with remaining time countdown (`26m 14s remaining`)
+      * Course metadata (`CS302: Data Structures & Algorithms`, Sem V, Sec B)
+      * Professor Profile (`Prof. K. Sharma`, Head Lecturer)
+      * Class Progress Bar (`Elapsed: 24 mins - 48%`)
+      * `LiveRollTelemetry` (`82 / 88 Present • 93.1% Attendance Rate`)
+      * `QuickHallCheckInQR` (High-contrast rotating QR container with `#TRM-301-B`)
+    * `NextInThisHallRail`
+      * Period 4: CS303 Database Systems (Amber `Faculty Substitution` notice)
+      * Period 5: CS305 Operating Systems Lab
+      * Period 6: Lunch Recess / Vacant Hall
+      * Period 7: Guest Lecture (Special session badge)
+  * `CampusBroadcastTicker` (Urgent news ticker: Lab shift notifications, system alerts)
+* **Buttons & Expected Actions:** Kiosk mode is non-interactive via touch/mouse; updates automatically via WebSocket broadcasts. Includes keyboard shortcut `F` for full-screen kiosk trigger.
+* **Forms & Input Fields:** None.
+* **Required UI States:**
+  * *Occupied / In Session*: Dark navy canvas with high-contrast emerald and white typography.
+  * *Vacant / Recess*: Displays "Hall Free for Quiet Study" with next scheduled period countdown.
+  * *Emergency Bulletin*: Ticker flashes amber/rose on urgent campus dispatch.
+* **Responsive Behaviour:** Optimized strictly for 16:9 aspect ratios (1920×1080, 2560×1440, 3840×2160 TVs and projectors). Eliminates tiny micro-copy to guarantee legibility from 15+ meters.
+* **Relevant Reusable Components:** Kiosk clock, ticker banner, QR container, timetable period cards.
+* **Backend Integration Requirements:**
+  * `WebSocket /ws/v1/kiosk/room/{room_id}` (Pushes live roster headcounts, time sync, and urgent broadcast notices)
+  * `GET /api/v1/kiosk/room/{room_id}/schedule`
+
+---
+
+## 7. Real-Time Telemetry & Universal Platform Screen
+
+### Screen 10: Notifications & Real-Time Campus Updates Center
+* **Screen Name:** Notifications & Real-Time Campus Updates Center (`{{DATA:SCREEN:SCREEN_5}}`)
+* **Role:** Universal (Accessible to Student, Faculty, and Admin personas)
+* **Purpose:** Centralized real-time dispatch log, priority alert categorization (substitutions, room relocations, debarment warnings), channel delivery settings, and campus room occupancy status.
+* **Navigation Entry Point:** Bell icon in top navigation `/notifications`.
+* **Component Hierarchy:**
+  * `TopNavBar` & `SideNavBar`
+  * `NotificationsLayout`
+    * `FilterToolbar` (All, Substitutions, Room Shifts, Attendance Alerts, Campus Broadcasts)
+    * `MarkAllAsReadCTA` & `ChannelToggles` (Push, Email, In-App)
+    * `NotificationFeedList`
+      * Priority-coded notification cards with category badge, unread dot, timestamp, body text, and direct action buttons (*Launch Scanner*, *View Route*, *Open Bunk Calculator*)
+    * `RightTelemetrySidebar`
+      * Live Campus Room Occupancy Heatmap (Engineering Block 1, 2, 3 occupancy rates)
+      * System WebSocket telemetry status (RVCE-Mesh connected, 14ms latency)
+* **Buttons & Expected Actions:**
+  * `Mark All as Read`: Sets all unread notifications to read via `PATCH /api/v1/notifications/mark-read`.
+  * `Filter Pills`: Client-side tab filter by notification category.
+  * `Inline Card Action Buttons`: Contextual deep-links to relevant feature screens.
+* **Forms & Input Fields:**
+  * `Search Notifications`: Text input.
+  * `Channel Preferences`: Toggle checkboxes for delivery methods.
+* **Required UI States:**
+  * *Unread*: Subtle tint background with solid indigo dot.
+  * *Read*: Neutral white card with muted text.
+  * *Empty Filter*: Friendly empty state when no notifications exist in selected category.
+* **Responsive Behaviour:** Stacks telemetry rail underneath the notification list on tablet viewports.
+* **Relevant Reusable Components:** `TopNavBar`, `SideNavBar`, `NotificationCard`, `Badge`, `Button`.
+* **Backend Integration Requirements:**
+  * `GET /api/v1/notifications?category={type}&unread_only={bool}`
+  * `PATCH /api/v1/notifications/{id}/read`
+  * `WebSocket /ws/v1/campus/telemetry`
+
+---
+
+### Screen 11: Campus Timetable & Attendance Platform (Universal Overview)
+* **Screen Name:** Campus Timetable & Attendance Platform (`{{DATA:SCREEN:SCREEN_14}}`)
+* **Role:** Universal Overview / Demo Master Canvas
+* **Purpose:** Architectural overview combining master timetable grid, daily operations telemetry, attendance threshold indicators, and cross-role navigation.
+* **Navigation Entry Point:** Root portal index `/overview`.
+* **Component Hierarchy:** Top Navigation Shell, Master Timetable Matrix, Attendance Metric Gauges, Quick Action Bar.
+* **Backend Integration Requirements:** Aggregated platform telemetry endpoints.
+
+---
+
+## 8. Shared Components & Design System Architecture
+
+### 8.1 Core Component Inventory
+1. **`TopNavBar`**: Full-width fixed 56px header with logo, term badge, WebSocket latency indicator, notification bell, and synchronized role switcher dropdown.
+2. **`SideNavBar`**: 256px docked navigation rail with active route indicator, icon set, and role-specific action CTAs. Automatically collapses to a 64px icon rail on tablets (<1024px).
+3. **`BottomNavBar`**: 64px mobile PWA navigation with 5 slots and centered elevated **Scan QR** FAB.
+4. **`Button`**: Standard variants (`primary`, `secondary`, `ghost`, `danger`, `success`) across 3 sizes (`sm` 32px, `md` 36px, `lg` 44px) with accessible focus rings and touch padding.
+5. **`Input` & `Select`**: High-contrast form controls with floating labels, error icons, and clear focus states.
+6. **`Badge`**: Semantic status tags (`PRESENT`, `LIVE CLASS`, `SUBSTITUTED`, `CANCELLED`, `DEFICIT`, `SAFE BUFFER`).
+7. **`Table`**: Data grid container with 48px row density, tabular numeric fonts for USNs and percentages, row hover styling, and pagination.
+8. **`Modal`**: Backdrop overlay with animated slide-up container, accessible escape key handling, and standard confirm/cancel actions.
+9. **`UGCAttendanceRing`**: Concentric SVG progress ring with 75% critical cutoff marker and live mathematical percentage readouts.
+10. **`WhatIfBunkSandbox`**: Dual-slider sandbox component with real-time recalculation of safe skips and required attendances.
+
+---
+
+## 9. Comprehensive Backend Integration Contract & Endpoint Matrix
+
+| Screen / Feature | HTTP Method / Protocol | API Endpoint Route | Payload / Query Parameters | Expected Response Data |
+| :--- | :---: | :--- | :--- | :--- |
+| **Authentication** | `POST` | `/api/v1/auth/login` | `{ identifier, password, role, campus_id }` | `{ token, refresh_token, user_profile }` |
+| **SSO OAuth** | `GET` | `/api/v1/auth/sso/{provider}` | Redirect | OAuth callback token |
+| **Weekly Timetable** | `GET` | `/api/v1/student/timetable/weekly` | `?student_id={id}&week={n}` | Array of 8 period slots per day with status |
+| **Student Summary** | `GET` | `/api/v1/student/attendance/summary` | None | `{ overall_pct, safe_buffer, danger_courses }` |
+| **Subject Logs** | `GET` | `/api/v1/student/attendance/logs` | `?course_id={id}&page={n}` | Paginated verification logs with timestamps |
+| **Dispute Filing** | `POST` | `/api/v1/student/attendance/dispute` | `{ session_id, reason, proof }` | `{ dispute_id, status: "PENDING" }` |
+| **Faculty Live QR** | `GET` | `/api/v1/attendance/qr-token` | `?session_id={id}` | `{ totp_token, hash, expires_in_sec: 15 }` |
+| **Live Scans Feed** | `WebSocket` | `/ws/v1/attendance/live/{session_id}` | Bidirectional stream | Real-time scan events `{ student_usn, name, time }` |
+| **Manual Override** | `POST` | `/api/v1/attendance/override` | `{ student_usn, session_id, status }` | `{ success: true, updated_roster }` |
+| **Lock QR Session** | `POST` | `/api/v1/attendance/session/lock` | `{ session_id }` | `{ final_present_count, absent_count }` |
+| **Student QR Scan** | `POST` | `/api/v1/attendance/verify-scan` | `{ qr_hash, device_id, gps, session_id }` | `{ verified: true, receipt_code }` |
+| **Student PIN Scan** | `POST` | `/api/v1/attendance/verify-pin` | `{ pin_code, session_id }` | `{ verified: true, receipt_code }` |
+| **Admin Substitutions**| `GET` | `/api/v1/admin/substitutions/pending` | None | Array of unassigned absence requests |
+| **Assign Substitute**| `POST` | `/api/v1/admin/substitutions/assign` | `{ leave_id, substitute_faculty_id }` | `{ status: "ASSIGNED", broadcast_dispatched }` |
+| **Kiosk Display Feed**| `WebSocket` | `/ws/v1/kiosk/room/{room_id}` | Live room telemetry | `{ current_class, progress_pct, next_classes, alerts }` |
+| **Notifications Feed**| `GET` | `/api/v1/notifications` | `?category={cat}&unread_only={bool}` | List of notification cards |
+| **Mark Notification**| `PATCH` | `/api/v1/notifications/{id}/read` | None | `{ id, read: true }` |
+
+---
+
+## 10. Frontend Engineering Implementation Instructions
+
+1. **Routing Setup**:
+   * Setup role-based route guards in Next.js / React Router (`/student/*`, `/faculty/*`, `/admin/*`, `/kiosk/*`, `/m/*`).
+2. **State Management**:
+   * Isolate live WebSocket subscriptions into custom hooks (`useAttendanceSocket`, `useCampusTelemetry`).
+   * Store active session tokens and user role in secure HTTP-only cookies and global auth state.
+3. **PWA Configuration**:
+   * Register service workers for caching `/m/*` routes and static assets for seamless operation across flaky campus Wi-Fi networks.
+4. **Style Handoff**:
+   * Drop the provided `tailwind.config.js` preset from `{{DATA:DOCUMENT:DOCUMENT_4}}` directly into the frontend repository. Enforce tabular monospace font utilities for all roll numbers, USNs, and attendance percentage readouts.

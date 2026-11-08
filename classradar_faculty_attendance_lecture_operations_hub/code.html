@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background text-on-surface" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ClassRadar - Faculty Portal Suite</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-container": "#4f46e5",
+            "secondary-fixed-dim": "#c2c6d3",
+            "surface-container": "#eaedff",
+            "outline-variant": "#c7c4d8",
+            "error-container": "#ffdad6",
+            "on-primary-fixed": "#0f0069",
+            "surface-bright": "#faf8ff",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#38485d",
+            "primary": "#3525cd",
+            "inverse-primary": "#c3c0ff",
+            "tertiary-container": "#516177",
+            "on-background": "#131b2e",
+            "primary-fixed-dim": "#c3c0ff",
+            "surface-dim": "#d2d9f4",
+            "on-secondary-container": "#60646f",
+            "primary-fixed": "#e2dfff",
+            "on-secondary": "#ffffff",
+            "surface-variant": "#dae2fd",
+            "on-error": "#ffffff",
+            "on-primary-fixed-variant": "#3323cc",
+            "secondary-fixed": "#dee2ef",
+            "on-primary-container": "#dad7ff",
+            "tertiary": "#3a495f",
+            "inverse-surface": "#283044",
+            "on-error-container": "#93000a",
+            "background": "#faf8ff",
+            "outline": "#777587",
+            "secondary-container": "#dee2ef",
+            "surface": "#faf8ff",
+            "on-surface-variant": "#464555",
+            "surface-container-low": "#f2f3ff",
+            "surface-container-high": "#e2e7ff",
+            "secondary": "#5a5e69",
+            "surface-tint": "#4d44e3",
+            "on-secondary-fixed-variant": "#424751",
+            "on-secondary-fixed": "#171c25",
+            "on-tertiary": "#ffffff",
+            "on-surface": "#131b2e",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed": "#0b1c30",
+            "on-tertiary-container": "#ccdcf7",
+            "tertiary-fixed": "#d3e4fe",
+            "inverse-on-surface": "#eef0ff",
+            "surface-container-highest": "#dae2fd",
+            "on-primary": "#ffffff",
+            "tertiary-fixed-dim": "#b7c8e1"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "1.5rem",
+            "gutter": "1rem",
+            "margin-tablet": "1.5rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem",
+            "space-3xl": "3rem",
+            "space-xs": "0.25rem",
+            "space-2xl": "2rem",
+            "space-md": "0.75rem",
+            "space-lg": "1rem",
+            "margin-desktop": "2rem",
+            "gutter-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "caption": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-sm": ["Inter"],
+            "tabular-mono": ["Inter"],
+            "display-lg": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-md": ["Inter"],
+            "display-lg-mobile": ["Inter"],
+            "label-md": ["Inter"],
+            "body-sm": ["Inter"]
+          },
+          "fontSize": {
+            "caption": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400"}],
+            "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+            "headline-sm": ["16px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "tabular-mono": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500"}],
+            "display-lg": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "600"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "500"}],
+            "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+            "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+            "display-lg-mobile": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+            "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500"}],
+            "body-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      display: inline-block;
+      line-height: 1;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .animate-pulse-ring {
+      animation: pulse-ring 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-body-md text-on-surface bg-[#F8FAFC]">
+<!-- Top System Header Banner & Navigation Shell -->
+<header class="border-b border-[#E2E8F0] bg-surface-container-lowest sticky top-0 z-30">
+<!-- Role Switcher & Sub-Header Bar -->
+<div class="px-gutter-desktop py-space-xs border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between text-body-sm text-secondary">
+<div class="flex items-center gap-space-md">
+<!-- Brand Logo from JSON image payload -->
+<div class="flex items-center gap-2">
+<img alt="ClassRadar" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDg09GGyy_kCdNcStdIk1Ixb6ATOiZhaFJeZXHY02fjrdLZOHlvU1SB2Lk3Tv3lozspgKSjJ03dDEinNd8LrmgaENhYcYDxQSVTPb-4zjfzKHz9wkeHfN2eMazDUfefrP2FLj3PJVCfxlfiHgvaOazoQA5L7AGbcF5dbZVTAwS1iHcAQRutnI1JFDrfADX4FRL8unEnQBQck71mkrwDRrgEBsO2WTpFFvHCC3NtftLzzw"/>
+</div>
+<span class="text-[#CBD5E1]">|</span>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface">
+<span class="w-2 h-2 rounded-full bg-[#16A34A] inline-block animate-ping"></span>
+<span class="w-2 h-2 rounded-full bg-[#16A34A] inline-block -ml-3.5"></span>
+<span class="text-caption font-caption text-[#16A34A] font-semibold uppercase tracking-wider">Academic Term 2024-25 (Odd)</span>
+</div>
+</div>
+<!-- Role Switcher Active Indicator -->
+<div class="flex items-center gap-space-md mt-1 sm:mt-0">
+<div class="flex items-center gap-2 bg-surface-container-lowest border border-[#E2E8F0] px-2.5 py-1 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-[#4F46E5] text-[18px]">account_circle</span>
+<div class="flex flex-col">
+<span class="text-caption font-caption text-secondary">Active Role</span>
+<span class="text-label-sm font-label-sm text-[#0F172A] font-semibold">Faculty (Prof. K. Sharma, CSE)</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[16px] ml-1">swap_vert</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors" title="Notifications">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="p-1.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors" title="Help Desk">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Main Navigation Bar -->
+<div class="px-gutter-desktop h-14 flex items-center justify-between">
+<nav class="flex items-center gap-space-lg overflow-x-auto h-full scrollbar-none">
+<a class="flex items-center gap-1.5 text-primary-container font-semibold border-b-2 border-primary-container h-full pt-1 px-1 text-label-md font-label-md" href="#dashboard">
+<span class="material-symbols-outlined text-[18px]">dashboard</span>
+          Dashboard
+        </a>
+<a class="flex items-center gap-1.5 text-secondary hover:text-on-surface h-full pt-1 px-1 text-label-md font-label-md border-b-2 border-transparent transition-colors" href="#timetable">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+          My Timetable
+        </a>
+<a class="flex items-center gap-1.5 text-secondary hover:text-on-surface h-full pt-1 px-1 text-label-md font-label-md border-b-2 border-transparent transition-colors relative" href="#attendance">
+<span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+          Start Attendance Session
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE]">LIVE</span>
+</a>
+<a class="flex items-center gap-1.5 text-secondary hover:text-on-surface h-full pt-1 px-1 text-label-md font-label-md border-b-2 border-transparent transition-colors" href="#room-booking">
+<span class="material-symbols-outlined text-[18px]">meeting_room</span>
+          Room Booking
+        </a>
+<a class="flex items-center gap-1.5 text-secondary hover:text-on-surface h-full pt-1 px-1 text-label-md font-label-md border-b-2 border-transparent transition-colors" href="#absence">
+<span class="material-symbols-outlined text-[18px]">event_busy</span>
+          Mark Absence
+        </a>
+</nav>
+<div class="hidden lg:flex items-center gap-space-sm shrink-0">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-[18px] text-[#94A3B8]">search</span>
+<input class="pl-8 pr-3 py-1.5 h-[34px] w-60 border border-[#E2E8F0] rounded-lg text-body-sm font-body-sm placeholder:text-[#94A3B8] focus:border-[#4F46E5] focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" placeholder="Search sessions, students..." type="text"/>
+</div>
+<button class="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-3 py-1.5 rounded-lg text-label-md font-label-md font-medium transition-colors flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+          Create Session
+        </button>
+</div>
+</div>
+</header>
+<!-- Main Canvas Container -->
+<main class="flex-1 max-w-[1600px] w-full mx-auto p-gutter-desktop space-y-space-xl">
+<!-- Active Class Critical Alert Banner -->
+<div class="bg-surface-container-lowest border-l-4 border-l-[#4F46E5] border border-[#E2E8F0] rounded-xl p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md shadow-sm">
+<div class="flex items-start md:items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] shrink-0">
+<span class="material-symbols-outlined text-[24px]">timer</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-caption font-caption text-[#4F46E5] font-semibold bg-[#EEF2FF] px-2 py-0.5 rounded border border-[#C7D2FE]">Upcoming Lecture • In 12 mins</span>
+<span class="text-body-sm font-body-sm text-secondary">Period 3 (11:15 AM - 12:05 PM)</span>
+</div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface mt-0.5">
+            Data Structures &amp; Algorithms <span class="text-secondary font-normal text-body-md">(CSE-A, Room 204)</span>
+</h2>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<a class="inline-flex items-center gap-2 px-4 py-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-lg text-label-md font-label-md font-medium transition-colors" href="#attendance">
+<span class="material-symbols-outlined text-[18px]">sensors</span>
+          Launch QR Beacon
+        </a>
+<button class="p-2 border border-[#E2E8F0] rounded-lg text-secondary hover:text-on-surface hover:bg-[#F8FAFC]">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Section 1: Faculty Dashboard & Today's Schedule Overview -->
+<section class="space-y-space-md" id="dashboard">
+<div class="flex items-center justify-between">
+<div>
+<h1 class="text-headline-md font-headline-md text-on-surface">Faculty Dashboard &amp; Today's Schedule</h1>
+<p class="text-body-sm font-body-sm text-secondary">Welcome back, Prof. K. Sharma. Today is Thursday, Oct 24, 2024.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 text-label-md font-label-md bg-surface-container-lowest border border-[#E2E8F0] rounded-lg text-secondary hover:text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+            Export Register
+          </button>
+</div>
+</div>
+<!-- Overview Stats Bento Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Stat 1 -->
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-md space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-caption font-caption uppercase tracking-wider text-secondary">Teaching Load</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">school</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-on-surface">4 Classes</div>
+<div class="text-body-sm font-body-sm text-secondary flex items-center gap-1">
+<span class="text-[#16A34A] font-medium">3 Theory</span> • <span>1 Scheduled Next</span>
+</div>
+</div>
+<!-- Stat 2 -->
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-md space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-caption font-caption uppercase tracking-wider text-secondary">Practical Track</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">biotech</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-on-surface">1 Lab Session</div>
+<div class="text-body-sm font-body-sm text-secondary">
+            Advanced Algo Lab (2:00 - 4:00 PM)
+          </div>
+</div>
+<!-- Stat 3 -->
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-md space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-caption font-caption uppercase tracking-wider text-secondary">Term Attendance</span>
+<span class="material-symbols-outlined text-[#16A34A] text-[20px]">verified</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-on-surface text-[#16A34A]">94.2%</div>
+<div class="text-body-sm font-body-sm text-[#16A34A] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+1.4% vs departmental benchmark</span>
+</div>
+</div>
+<!-- Stat 4 -->
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-md space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-caption font-caption uppercase tracking-wider text-secondary">Duty Requests</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">task_alt</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-on-surface">0 Pending</div>
+<div class="text-body-sm font-body-sm text-secondary">
+            All substitution requests resolved
+          </div>
+</div>
+</div>
+<!-- Schedule Matrix Table -->
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm">
+<div class="px-space-lg py-3 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#4F46E5] text-[20px]">event_note</span>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Today's Class Schedule (Thursday)</h3>
+</div>
+<div class="flex items-center gap-2 text-caption font-caption text-secondary">
+<span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#16A34A]"></span> Finished</span>
+<span class="inline-flex items-center gap-1 ml-2"><span class="w-2 h-2 rounded-full bg-[#4F46E5]"></span> In 12m</span>
+<span class="inline-flex items-center gap-1 ml-2"><span class="w-2 h-2 rounded-full bg-[#CBD5E1]"></span> Upcoming</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-[#E2E8F0] bg-[#F8FAFC] text-caption font-caption text-secondary uppercase tracking-wider">
+<th class="py-2.5 px-4 font-semibold">Slot &amp; Time</th>
+<th class="py-2.5 px-4 font-semibold">Course / Code</th>
+<th class="py-2.5 px-4 font-semibold">Section &amp; Strength</th>
+<th class="py-2.5 px-4 font-semibold">Venue</th>
+<th class="py-2.5 px-4 font-semibold">Status / Mode</th>
+<th class="py-2.5 px-4 font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#E2E8F0] text-body-sm font-body-sm">
+<tr class="hover:bg-[#F8FAFC] transition-colors">
+<td class="py-3 px-4 font-tabular-mono font-medium text-secondary">Period 1 (09:00 - 09:50)</td>
+<td class="py-3 px-4 font-semibold text-on-surface">CS301: Discrete Mathematics</td>
+<td class="py-3 px-4 text-secondary">CSE-B (62 Registered)</td>
+<td class="py-3 px-4">Room 108</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm font-medium bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span> Completed (93.5%)
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-caption font-caption font-semibold text-[#4F46E5] hover:underline">View Roster</button>
+</td>
+</tr>
+<!-- Live highlight class -->
+<tr class="bg-[#EEF2FF]/60 hover:bg-[#EEF2FF] transition-colors border-l-4 border-l-[#4F46E5]">
+<td class="py-3 px-4 font-tabular-mono font-semibold text-[#4F46E5]">Period 3 (11:15 - 12:05)</td>
+<td class="py-3 px-4 font-semibold text-on-surface">CS303: Data Structures &amp; Algorithms</td>
+<td class="py-3 px-4 text-secondary">CSE-A (64 Registered)</td>
+<td class="py-3 px-4 font-semibold text-on-surface">Room 204 (Smart Hall)</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm font-semibold bg-[#4F46E5] text-white">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span> Starting in 12m
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<a class="inline-flex items-center gap-1 text-label-sm font-label-sm font-semibold text-[#4F46E5] hover:underline" href="#attendance">
+<span>Open QR Beacon</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</td>
+</tr>
+<tr class="hover:bg-[#F8FAFC] transition-colors">
+<td class="py-3 px-4 font-tabular-mono font-medium text-secondary">Period 5 (01:30 - 02:20)</td>
+<td class="py-3 px-4 font-semibold text-on-surface">CS392: Data Structures Lab</td>
+<td class="py-3 px-4 text-secondary">CSE-A Batch 1 (32 Students)</td>
+<td class="py-3 px-4">Lab 2 (Computing)</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm font-medium bg-[#F1F5F9] border border-[#E2E8F0] text-secondary">
+                    Upcoming
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-caption font-caption font-semibold text-secondary hover:text-on-surface">Prep Workspace</button>
+</td>
+</tr>
+<tr class="hover:bg-[#F8FAFC] transition-colors">
+<td class="py-3 px-4 font-tabular-mono font-medium text-secondary">Period 6 (02:20 - 03:10)</td>
+<td class="py-3 px-4 font-semibold text-on-surface">CS392: Data Structures Lab</td>
+<td class="py-3 px-4 text-secondary">CSE-A Batch 2 (32 Students)</td>
+<td class="py-3 px-4">Lab 2 (Computing)</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm font-medium bg-[#F1F5F9] border border-[#E2E8F0] text-secondary">
+                    Upcoming
+                  </span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-caption font-caption font-semibold text-secondary hover:text-on-surface">Prep Workspace</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Section 2: Live 15s Rotating QR Attendance Session (High Fidelity Live Workspace) -->
+<section class="space-y-space-md" id="attendance">
+<div class="border-b border-[#E2E8F0] pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+<h2 class="text-headline-md font-headline-md text-on-surface">Live Rotating QR Attendance Engine</h2>
+</div>
+<p class="text-body-sm font-body-sm text-secondary">Active Session: Data Structures &amp; Algorithms • Session Token: <strong class="font-tabular-mono text-on-surface">#CR-8492</strong></p>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 bg-[#FFFFFF] border border-[#E2E8F0] hover:bg-[#F8FAFC] text-secondary text-label-md font-label-md rounded-lg flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+            Projector Mode
+          </button>
+<button class="px-3.5 py-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-label-md font-label-md font-medium rounded-lg flex items-center gap-1.5 shadow-sm transition-colors">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+            End &amp; Lock Attendance
+          </button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
+<!-- Left: Large High-Fidelity Dynamic QR Beacon Panel (5 Cols) -->
+<div class="lg:col-span-5 bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-lg flex flex-col items-center justify-center text-center relative overflow-hidden shadow-sm">
+<!-- Live 15s Countdown Badge -->
+<div class="w-full flex items-center justify-between border-b border-[#E2E8F0] pb-3 mb-4">
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-[#16A34A] font-semibold bg-[#F0FDF4] px-2.5 py-1 rounded-md border border-[#BBF7D0]">
+<span class="w-2 h-2 rounded-full bg-[#16A34A] animate-ping"></span>
+              Broadcasting Geo-Fence Beacon
+            </div>
+<div class="flex items-center gap-1 font-tabular-mono text-label-md font-label-md font-semibold text-[#4F46E5] bg-[#EEF2FF] px-2.5 py-1 rounded-md border border-[#C7D2FE]">
+<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span>
+              Expires in <span id="countdown-timer">11</span>s
+            </div>
+</div>
+<!-- Stylized High-Fidelity SVG QR Matrix with Anti-Screenshot Watermark Layer -->
+<div class="relative p-4 bg-[#FFFFFF] border-2 border-[#4F46E5] rounded-2xl shadow-inner my-2 group">
+<div class="w-64 h-64 relative bg-[#FFFFFF] flex items-center justify-center">
+<!-- Crisp Simulated Vector QR Code with corner anchors and data micro-patterns -->
+<div class="w-full h-full grid grid-cols-6 grid-rows-6 gap-1 p-2 bg-[#FFFFFF]">
+<!-- Top-Left Target Anchor -->
+<div class="col-span-2 row-span-2 border-4 border-[#0F172A] p-1 flex items-center justify-center">
+<div class="w-full h-full bg-[#0F172A]"></div>
+</div>
+<div class="col-span-2 row-span-1 bg-[#0F172A]"></div>
+<!-- Top-Right Target Anchor -->
+<div class="col-span-2 row-span-2 border-4 border-[#0F172A] p-1 flex items-center justify-center">
+<div class="w-full h-full bg-[#0F172A]"></div>
+</div>
+<!-- Mid Data Grid Blocks -->
+<div class="col-span-1 row-span-2 bg-[#0F172A]"></div>
+<div class="col-span-1 row-span-1 bg-[#4F46E5]"></div>
+<div class="col-span-1 row-span-2 bg-[#0F172A]"></div>
+<div class="col-span-2 row-span-1 bg-[#0F172A]"></div>
+<div class="col-span-2 row-span-1 bg-[#EEF2FF] flex items-center justify-center text-[10px] font-bold text-[#4F46E5]">CR-8492</div>
+<!-- Bottom-Left Target Anchor -->
+<div class="col-span-2 row-span-2 border-4 border-[#0F172A] p-1 flex items-center justify-center">
+<div class="w-full h-full bg-[#0F172A]"></div>
+</div>
+<div class="col-span-1 row-span-2 bg-[#0F172A]"></div>
+<div class="col-span-2 row-span-1 bg-[#4F46E5]"></div>
+<div class="col-span-1 row-span-1 bg-[#0F172A]"></div>
+<div class="col-span-2 row-span-1 bg-[#0F172A]"></div>
+</div>
+<!-- Center Centerpiece Security Shield Stamp -->
+<div class="absolute inset-0 m-auto w-12 h-12 rounded-xl bg-[#4F46E5] text-white flex items-center justify-center shadow-lg border-2 border-white">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+</div>
+<!-- Dynamic Scanning Ray Overlay -->
+<div class="absolute inset-x-4 top-4 h-1 bg-gradient-to-r from-transparent via-[#4F46E5] to-transparent opacity-80 animate-bounce"></div>
+</div>
+<div class="mt-4 space-y-1">
+<div class="flex items-center justify-center gap-2 font-tabular-mono text-label-md font-label-md text-on-surface">
+<span>Token: <span class="font-bold text-[#4F46E5]">#CR-8492-94B</span></span>
+<span class="text-secondary">•</span>
+<span class="text-secondary">Radius: 15m (Room 204)</span>
+</div>
+<p class="text-caption font-caption text-secondary">
+              Regenerates automatically every 15s to prevent screenshot proxying.
+            </p>
+</div>
+</div>
+<!-- Right: Real-time Stats, Live Incoming Stream & Manual Override Table (7 Cols) -->
+<div class="lg:col-span-7 space-y-space-md">
+<!-- Session Metrics Card -->
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-md flex flex-wrap items-center justify-between gap-space-md shadow-sm">
+<div class="space-y-1">
+<span class="text-caption font-caption uppercase tracking-wider text-secondary">Present / Enrolled</span>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg font-bold text-on-surface">58</span>
+<span class="text-body-md font-body-md text-secondary">/ 64 Students</span>
+</div>
+</div>
+<div class="space-y-1">
+<span class="text-caption font-caption uppercase tracking-wider text-secondary">Attendance Rate</span>
+<div class="text-headline-lg font-headline-lg font-bold text-[#16A34A]">90.6%</div>
+</div>
+<div class="w-full bg-[#F1F5F9] rounded-full h-2.5 overflow-hidden">
+<div class="bg-[#16A34A] h-2.5 rounded-full" style="width: 90.6%"></div>
+</div>
+</div>
+<!-- Live Incoming Verification Stream & Manual Override Table -->
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm">
+<div class="px-space-md py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#16A34A] text-[20px]">how_to_reg</span>
+<h3 class="text-label-md font-label-md font-semibold text-on-surface">Student Verification Stream &amp; Manual Override</h3>
+</div>
+<span class="text-caption font-caption text-secondary">Showing 64 total enrolled</span>
+</div>
+<div class="max-h-72 overflow-y-auto divide-y divide-[#E2E8F0]">
+<!-- Stream Item 1 - Just verified -->
+<div class="p-space-md flex items-center justify-between hover:bg-[#F8FAFC] transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A] flex items-center justify-center font-bold text-caption">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-semibold text-body-sm text-on-surface">Aarav Patel</span>
+<span class="text-caption font-caption font-tabular-mono text-secondary">CSE22001</span>
+</div>
+<span class="text-caption font-caption text-[#16A34A]">Verified 4s ago • BLE Beacon matched</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-caption font-caption bg-[#F0FDF4] text-[#16A34A] px-2 py-0.5 rounded border border-[#BBF7D0] font-medium">Present</span>
+<button class="text-caption font-caption text-secondary hover:text-[#DC2626] font-medium" title="Revoke mark">Revoke</button>
+</div>
+</div>
+<!-- Stream Item 2 - Verified -->
+<div class="p-space-md flex items-center justify-between hover:bg-[#F8FAFC] transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A] flex items-center justify-center font-bold text-caption">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-semibold text-body-sm text-on-surface">Diya Sengupta</span>
+<span class="text-caption font-caption font-tabular-mono text-secondary">CSE22019</span>
+</div>
+<span class="text-caption font-caption text-[#16A34A]">Verified 18s ago • QR Scan matched</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-caption font-caption bg-[#F0FDF4] text-[#16A34A] px-2 py-0.5 rounded border border-[#BBF7D0] font-medium">Present</span>
+<button class="text-caption font-caption text-secondary hover:text-[#DC2626] font-medium">Revoke</button>
+</div>
+</div>
+<!-- Stream Item 3 - UNVERIFIED (Needs override option) -->
+<div class="p-space-md flex items-center justify-between bg-[#FFFBEB]/40 hover:bg-[#FFFBEB]/70 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] flex items-center justify-center font-bold text-caption">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-semibold text-body-sm text-on-surface">Rohan Verma</span>
+<span class="text-caption font-caption font-tabular-mono text-secondary">CSE22045</span>
+</div>
+<span class="text-caption font-caption text-[#D97706]">Not scanned yet • Device offline</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<!-- Manual Toggle Override -->
+<button class="px-2.5 py-1 text-label-sm font-label-sm font-semibold bg-[#4F46E5] text-white rounded hover:bg-[#4338CA] transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">touch_app</span>
+                    Manual Mark Present
+                  </button>
+</div>
+</div>
+<!-- Stream Item 4 - UNVERIFIED -->
+<div class="p-space-md flex items-center justify-between bg-[#FFFBEB]/40 hover:bg-[#FFFBEB]/70 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] flex items-center justify-center font-bold text-caption">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-semibold text-body-sm text-on-surface">Sneha Nambiar</span>
+<span class="text-caption font-caption font-tabular-mono text-secondary">CSE22058</span>
+</div>
+<span class="text-caption font-caption text-[#D97706]">Not scanned yet</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 text-label-sm font-label-sm font-semibold bg-[#4F46E5] text-white rounded hover:bg-[#4338CA] transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">touch_app</span>
+                    Manual Mark Present
+                  </button>
+</div>
+</div>
+</div>
+<div class="p-space-sm bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between text-caption font-caption text-secondary">
+<span>Auto-refresh active (WebSockets Connected)</span>
+<button class="text-[#4F46E5] font-semibold hover:underline">Mark all remaining as Absent</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Lower Dual Grid: Section 3 (Mark Absence & Substitution) and Section 4 (Room Booking Engine) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- Section 3: Mark Me Absent & Substitution Request (5 Cols) -->
+<section class="lg:col-span-5 bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-lg space-y-space-md shadow-sm" id="absence">
+<div class="border-b border-[#E2E8F0] pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#4F46E5] text-[22px]">event_busy</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Mark Absence &amp; Request Sub</h2>
+</div>
+<p class="text-body-sm font-body-sm text-secondary">Auto-matches available departmental faculty with zero timetable clashes.</p>
+</div>
+<form class="space-y-space-md" onsubmit="event.preventDefault();">
+<!-- Date Picker -->
+<div class="space-y-1">
+<label class="text-label-md font-label-md font-medium text-on-surface">Absence Date</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-secondary">calendar_month</span>
+<input class="w-full pl-9 pr-3 py-2 border border-[#E2E8F0] rounded-lg text-body-sm focus:border-[#4F46E5] focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" type="date" value="2024-10-25"/>
+</div>
+</div>
+<!-- Multi-period Selector -->
+<div class="space-y-1">
+<label class="text-label-md font-label-md font-medium text-on-surface">Select Affected Periods</label>
+<div class="grid grid-cols-4 gap-1.5 text-center text-label-sm font-label-sm">
+<button class="py-1.5 border border-[#E2E8F0] rounded hover:bg-[#F8FAFC] text-secondary" type="button">P1</button>
+<button class="py-1.5 border border-[#E2E8F0] rounded hover:bg-[#F8FAFC] text-secondary" type="button">P2</button>
+<!-- Selected: Period 3 -->
+<button class="py-1.5 bg-[#4F46E5] text-white rounded font-semibold" type="button">P3 (11:15)</button>
+<!-- Selected: Period 4 -->
+<button class="py-1.5 bg-[#4F46E5] text-white rounded font-semibold" type="button">P4 (12:05)</button>
+<button class="py-1.5 border border-[#E2E8F0] rounded hover:bg-[#F8FAFC] text-secondary" type="button">P5</button>
+<button class="py-1.5 border border-[#E2E8F0] rounded hover:bg-[#F8FAFC] text-secondary" type="button">P6</button>
+<button class="py-1.5 border border-[#E2E8F0] rounded hover:bg-[#F8FAFC] text-secondary" type="button">P7</button>
+<button class="py-1.5 border border-[#E2E8F0] rounded hover:bg-[#F8FAFC] text-secondary" type="button">P8</button>
+</div>
+<p class="text-caption font-caption text-secondary">Selected: Period 3 &amp; 4 (2 consecutive lecture hours)</p>
+</div>
+<!-- Reason Selector -->
+<div class="space-y-1">
+<label class="text-label-md font-label-md font-medium text-on-surface">Leave Category / Reason</label>
+<select class="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-body-sm focus:border-[#4F46E5] focus:outline-none focus:ring-1 focus:ring-[#4F46E5]">
+<option selected="">Academic Conference / Symposium</option>
+<option>Medical Leave</option>
+<option>University Administrative Duty</option>
+<option>Casual Leave</option>
+</select>
+</div>
+<!-- Clash-Free Substitute Faculty Preview -->
+<div class="space-y-2 pt-1 border-t border-[#E2E8F0]">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md font-semibold text-on-surface">Clash-Free Substitute Matches</label>
+<span class="text-caption font-caption text-[#16A34A] font-semibold">2 Available</span>
+</div>
+<div class="space-y-2">
+<!-- Sub Candidate 1 -->
+<label class="flex items-start gap-3 p-2.5 border-2 border-[#4F46E5] bg-[#EEF2FF]/40 rounded-lg cursor-pointer">
+<input checked="" class="mt-1 text-[#4F46E5] focus:ring-[#4F46E5]" name="sub_faculty" type="radio"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-semibold text-body-sm text-on-surface">Dr. P. Rao</span>
+<span class="text-caption font-caption bg-[#F0FDF4] text-[#16A34A] px-1.5 py-0.5 rounded border border-[#BBF7D0]">100% Free Slot</span>
+</div>
+<p class="text-caption font-caption text-secondary">CSE Dept • Algorithms Specialization</p>
+</div>
+</label>
+<!-- Sub Candidate 2 -->
+<label class="flex items-start gap-3 p-2.5 border border-[#E2E8F0] hover:bg-[#F8FAFC] rounded-lg cursor-pointer">
+<input class="mt-1 text-[#4F46E5] focus:ring-[#4F46E5]" name="sub_faculty" type="radio"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-semibold text-body-sm text-on-surface">Prof. Anita Roy</span>
+<span class="text-caption font-caption bg-[#F0FDF4] text-[#16A34A] px-1.5 py-0.5 rounded border border-[#BBF7D0]">100% Free Slot</span>
+</div>
+<p class="text-caption font-caption text-secondary">CSE Dept • Data Engineering</p>
+</div>
+</label>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="w-full py-2.5 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-lg text-label-md font-label-md font-medium transition-colors shadow-sm flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">send</span>
+            Dispatch Substitution Request
+          </button>
+</form>
+</section>
+<!-- Section 4: Faculty Room Booking Engine (7 Cols) -->
+<section class="lg:col-span-7 bg-surface-container-lowest border border-[#E2E8F0] rounded-xl p-space-lg space-y-space-md shadow-sm" id="room-booking">
+<div class="border-b border-[#E2E8F0] pb-3 flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#4F46E5] text-[22px]">meeting_room</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Faculty Room Booking Engine</h2>
+</div>
+<p class="text-body-sm font-body-sm text-secondary">Instant reservations with conflict checking across academic blocks.</p>
+</div>
+<span class="text-caption font-caption bg-[#EEF2FF] text-[#4F46E5] px-2.5 py-1 rounded-md font-semibold border border-[#C7D2FE]">Auto-Approval Active</span>
+</div>
+<!-- Filter Bar -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
+<!-- Date -->
+<div>
+<label class="text-caption font-caption text-secondary block mb-1">Date</label>
+<input class="w-full text-body-sm py-1 px-2 border border-[#E2E8F0] rounded bg-white" type="date" value="2024-10-24"/>
+</div>
+<!-- Period -->
+<div>
+<label class="text-caption font-caption text-secondary block mb-1">Period Slot</label>
+<select class="w-full text-body-sm py-1 px-2 border border-[#E2E8F0] rounded bg-white font-medium">
+<option selected="">Period 5 (1:30 - 2:20 PM)</option>
+<option>Period 6 (2:20 - 3:10 PM)</option>
+<option>Period 7 (3:20 - 4:10 PM)</option>
+</select>
+</div>
+<!-- Room Type -->
+<div>
+<label class="text-caption font-caption text-secondary block mb-1">Facility Type</label>
+<select class="w-full text-body-sm py-1 px-2 border border-[#E2E8F0] rounded bg-white">
+<option selected="">Computing Lab</option>
+<option>Smart Classroom</option>
+<option>Seminar Hall</option>
+</select>
+</div>
+<!-- Capacity Slider -->
+<div class="sm:col-span-3 pt-2 flex items-center justify-between gap-4">
+<div class="flex items-center gap-2 flex-1">
+<label class="text-caption font-caption text-secondary whitespace-nowrap">Min Capacity: <strong class="text-on-surface font-semibold">60 seats</strong></label>
+<input class="w-full accent-[#4F46E5] h-1.5 bg-[#CBD5E1] rounded" max="150" min="30" type="range" value="60"/>
+</div>
+<button class="px-3 py-1 bg-surface-container-lowest border border-[#CBD5E1] text-label-sm font-label-sm font-medium rounded hover:bg-[#F8FAFC] text-on-surface">
+              Apply Filters
+            </button>
+</div>
+</div>
+<!-- Real-time Free Room Results Cards -->
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between text-label-sm font-label-sm text-secondary">
+<span>Available Venues for Selected Slot</span>
+<span class="text-[#16A34A] font-semibold">2 Free Facilities Detected</span>
+</div>
+<!-- Result 1 -->
+<div class="p-space-md border border-[#E2E8F0] hover:border-[#CBD5E1] rounded-lg bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm transition-all shadow-sm">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm font-headline-sm text-on-surface">Lab 2 (Computing Wing)</span>
+<span class="px-2 py-0.5 rounded text-caption font-caption font-semibold bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0]">Vacant</span>
+</div>
+<div class="flex items-center gap-3 text-caption font-caption text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">groups</span> 64 Workstations</span>
+<span>•</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">lan</span> Gigabit LAN / Dual Monitor</span>
+<span>•</span>
+<span>Block B, Floor 2</span>
+</div>
+</div>
+<button class="px-3 py-1.5 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-lg text-label-md font-label-md font-medium transition-colors shrink-0 flex items-center gap-1" onclick="document.getElementById('booking-modal').classList.remove('hidden')">
+<span>Book Venue</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<!-- Result 2 -->
+<div class="p-space-md border border-[#E2E8F0] hover:border-[#CBD5E1] rounded-lg bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm transition-all shadow-sm">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm font-headline-sm text-on-surface">Room 305 (Smart Classroom)</span>
+<span class="px-2 py-0.5 rounded text-caption font-caption font-semibold bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0]">Vacant</span>
+</div>
+<div class="flex items-center gap-3 text-caption font-caption text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">groups</span> 75 Tiered Seats</span>
+<span>•</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">tv</span> 4K Interactive Board</span>
+<span>•</span>
+<span>Academic Core, Floor 3</span>
+</div>
+</div>
+<button class="px-3 py-1.5 bg-[#EEF2FF] hover:bg-[#E0E7FF] text-[#4F46E5] rounded-lg text-label-md font-label-md font-medium transition-colors shrink-0 flex items-center gap-1" onclick="document.getElementById('booking-modal').classList.remove('hidden')">
+<span>Book Venue</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Mini Notice on Policy -->
+<div class="p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-caption font-caption text-secondary flex items-start gap-2">
+<span class="material-symbols-outlined text-[#4F46E5] text-[16px] mt-0.5">info</span>
+<span>Room reservations are logged in the campus-wide scheduling ledger. Labs automatically power on projector systems 5 minutes prior to booking window.</span>
+</div>
+</section>
+</div>
+</main>
+<!-- Interactive Reservation Confirmation Modal (Hidden by default, triggered on button click) -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/30 backdrop-blur-sm p-4" id="booking-modal">
+<div class="bg-surface-container-lowest border border-[#E2E8F0] rounded-xl max-w-md w-full p-space-lg space-y-space-md shadow-2xl">
+<div class="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#4F46E5] text-[22px]">book_online</span>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Confirm Instant Reservation</h3>
+</div>
+<button class="text-secondary hover:text-on-surface" onclick="document.getElementById('booking-modal').classList.add('hidden')">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="space-y-3 text-body-sm font-body-sm">
+<div class="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0] space-y-1">
+<div class="text-caption font-caption text-secondary">Target Venue</div>
+<div class="font-semibold text-on-surface text-body-md">Lab 2 (Computing Wing) • 64 Seats</div>
+<div class="text-caption font-caption text-[#4F46E5] font-semibold">Today • Period 5 (1:30 PM - 2:20 PM)</div>
+</div>
+<div class="space-y-1">
+<label class="text-label-md font-label-md font-medium text-on-surface">Booking Purpose / Session Note</label>
+<input class="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg text-body-sm focus:border-[#4F46E5] focus:outline-none focus:ring-1 focus:ring-[#4F46E5]" type="text" value="Remedial Lab Practicum - CS392 Section A"/>
+</div>
+<div class="flex items-center gap-2 text-caption font-caption text-[#16A34A] bg-[#F0FDF4] p-2 rounded border border-[#BBF7D0]">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Zero conflicts detected with Departmental Master Timetable.</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 pt-2 border-t border-[#E2E8F0]">
+<button class="px-3.5 py-2 border border-[#E2E8F0] text-secondary hover:text-on-surface rounded-lg text-label-md font-label-md" onclick="document.getElementById('booking-modal').classList.add('hidden')">
+          Cancel
+        </button>
+<button class="px-4 py-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-lg text-label-md font-label-md font-medium shadow-sm transition-colors" onclick="alert('Reservation Confirmed for Lab 2 (Period 5). Digital keys dispatched to SmartID.'); document.getElementById('booking-modal').classList.add('hidden')">
+          Confirm Instant Reservation
+        </button>
+</div>
+</div>
+</div>
+<!-- Micro-interaction JavaScript for 15s QR Countdown cycle -->
+<script>
+    let timeLeft = 11;
+    const timerElement = document.getElementById('countdown-timer');
+    if (timerElement) {
+      setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+          timeLeft = 15;
+        }
+        timerElement.textContent = timeLeft;
+      }, 1000);
+    }
+  </script>
+</body></html>
