@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  FACULTY
+  ADMIN
+}
+
+enum RoomType {
+  CLASSROOM
+  LAB
+}
+
+enum Status {
+  SUGGESTED
+  CONFIRMED
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+enum AttendanceMethod {
+  SCAN
+  MANUAL
+  SYSTEM
+}
+
+model User {
+  id               String   @id @default(uuid())
+  name             String
+  email            String   @unique
+  passwordHash     String
+  role             Role
+  department       String?
+  sectionId        String?
+  
+  section          Section? @relation(fields: [sectionId], references: [id])
+  slots            Slot[]
+  absences         Absence[]
+  substitutions    Substitution[]
+  roomBookings     RoomBooking[]
+  sessionsStarted  AttendanceSession[]
+  attendance       AttendanceRecord[]
+}
+
+model Section {
+  id         String   @id @default(uuid())
+  name       String
+  department String
+  semester   Int
+  
+  users      User[]
+  slots      Slot[]
+}
+
+model Subject {
+  id    String @id @default(uuid())
+  code  String @unique
+  name  String
+  
+  slots Slot[]
+}
+
+model Room {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  type          RoomType
+  capacity      Int
+  
+  slots         Slot[]
+  substitutions Substitution[]
+  bookings      RoomBooking[]
+}
+
+model Slot {
+  id         String   @id @default(uuid())
+  sectionId  String
+  subjectId  String
+  facultyId  String
+  roomId     String
+  weekday    Int
+  period     Int
+
+  section    Section  @relation(fields: [sectionId], references: [id])
+  subject    Subject  @relation(fields: [subjectId], references: [id])
+  faculty    User     @relation(fields: [facultyId], references: [id])
+  room       Room     @relation(fields: [roomId], references: [id])
+  
+  substitutions Substitution[]
+  sessions      AttendanceSession[]
+
+  @@unique([sectionId, weekday, period])
+  @@unique([facultyId, weekday, period])
+  @@unique([roomId, weekday, period])
+}
+
+model Absence {
+  id          String   @id @default(uuid())
+  facultyId   String
+  date        DateTime @db.Date
+  periods     Int[]
+  reason      String?
+  createdById String
+
+  faculty     User     @relation(fields: [facultyId], references: [id])
+  substitutions Substitution[]
+}
+
+model Substitution {
+  id                  String   @id @default(uuid())
+  absenceId           String
+  slotId              String
+  date                DateTime @db.Date
+  substituteFacultyId String?
+  roomId              String
+  status              Status
+
+  absence             Absence  @relation(fields: [absenceId], references: [id])
+  slot                Slot     @relation(fields: [slotId], references: [id])
+  substituteFaculty   User?    @relation(fields: [substituteFacultyId], references: [id])
+  room                Room     @relation(fields: [roomId], references: [id])
+}
+
+model RoomBooking {
+  id         String   @id @default(uuid())
+  roomId     String
+  date       DateTime @db.Date
+  period     Int
+  bookedById String
+  purpose    String
+
+  room       Room     @relation(fields: [roomId], references: [id])
+  bookedBy   User     @relation(fields: [bookedById], references: [id])
+
+  @@unique([roomId, date, period])
+}
+
+model AttendanceSession {
+  id          String   @id @default(uuid())
+  slotId      String
+  date        DateTime @db.Date
+  startedById String
+  status      SessionStatus
+  startedAt   DateTime @default(now())
+  closedAt    DateTime?
+
+  slot        Slot     @relation(fields: [slotId], references: [id])
+  startedBy   User     @relation(fields: [startedById], references: [id])
+  records     AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id         String   @id @default(uuid())
+  sessionId  String
+  studentId  String
+  status     AttendanceStatus
+  method     AttendanceMethod
+  markedAt   DateTime @default(now())
+
+  session    AttendanceSession @relation(fields: [sessionId], references: [id])
+  student    User              @relation(fields: [studentId], references: [id])
+
+  @@unique([sessionId, studentId])
+}
