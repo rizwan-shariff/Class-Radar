@@ -12,6 +12,7 @@ module.exports = [
     languageOptions: {
       parser: tsParser,
       globals: {
+        console: 'readonly',
         process: 'readonly',
       },
       parserOptions: {

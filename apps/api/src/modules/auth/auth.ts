@@ -114,7 +114,9 @@ export const registerAuthRoutes = (
   app: Pick<FastifyInstance, 'post' | 'get'>,
   dependencies: AuthDependencies,
 ): void => {
-  app.post('/api/v1/auth/login', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.post('/api/v1/auth/login', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const parsed = loginBodySchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(401).send({
