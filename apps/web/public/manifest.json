@@ -1,0 +1,17 @@
+{
+  "name": "ClassRadar",
+  "short_name": "ClassRadar",
+  "description": "Academic Schedule & Attendance Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCF9F4",
+  "theme_color": "#6C5939",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
+

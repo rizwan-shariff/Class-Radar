@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  /* Sand & Titanium Liquid Glass Design Tokens */
+  --background: #FCF9F4;
+  --foreground: #1B1C19;
+
+  --surface: #FCF9F4;
+  --surface-dim: #DCDAD5;
+  --surface-bright: #FCF9F4;
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #F6F3EE;
+  --surface-container: #F0EEE9;
+  --surface-container-high: #EAE8E3;
+  --surface-container-highest: #E5E2DD;
+
+  --on-surface: #1B1C19;
+  --on-surface-variant: #4C463C;
+  --outline: #7E766B;
+  --outline-variant: #CFC5B8;
+
+  --primary: #6C5939;
+  --on-primary: #FFFFFF;
+  --primary-container: #86724F;
+  --on-primary-container: #FFFBFF;
+
+  --secondary: #635E53;
+  --on-secondary: #FFFFFF;
+  --secondary-container: #E7DFD1;
+  --on-secondary-container: #676257;
+
+  --tertiary: #5C5C58;
+  --on-tertiary: #FFFFFF;
+  --tertiary-container: #757571;
+  --on-tertiary-container: #FEFCF7;
+
+  --error: #BA1A1A;
+  --on-error: #FFFFFF;
+  --error-container: #FFDAD6;
+  --on-error-container: #93000A;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism utility helpers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px 0 rgba(108, 89, 57, 0.08);
+}
+
+.glass-panel-subtle {
+  background: rgba(246, 243, 238, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(207, 197, 184, 0.4);
+}
+
+.glass-bottom-nav {
+  background: rgba(252, 249, 244, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(207, 197, 184, 0.5);
+  box-shadow: 0 -4px 24px -2px rgba(48, 48, 45, 0.06);
+}
