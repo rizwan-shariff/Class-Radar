@@ -55,9 +55,23 @@ export default function StudentScanPage() {
       const html5QrCode = new Html5Qrcode('qr-reader-container');
       scannerRef.current = html5QrCode;
 
-      // Prefer back/environment camera, fallback to user camera if desktop/laptop
+      // html5-qrcode expects a string "environment" or "user", or an object with { exact: "..." }
+      let cameraConfig: any = "environment";
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length > 0) {
+          // If multiple cameras exist, choose back camera if label matches, otherwise first camera
+          const backCam = cameras.find((c) =>
+            c.label.toLowerCase().includes("back") || c.label.toLowerCase().includes("rear") || c.label.toLowerCase().includes("environment")
+          );
+          cameraConfig = backCam ? backCam.id : cameras[0].id;
+        }
+      } catch (e) {
+        cameraConfig = "environment";
+      }
+
       await html5QrCode.start(
-        { facingMode: { ideal: 'environment' } },
+        cameraConfig,
         {
           fps: 15,
           qrbox: (viewfinderWidth, viewfinderHeight) => {
