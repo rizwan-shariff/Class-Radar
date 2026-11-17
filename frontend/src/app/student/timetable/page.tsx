@@ -14,24 +14,22 @@ import {
 } from 'lucide-react';
 
 const WEEKDAYS = [
-  { id: 1, label: 'Monday', short: 'Mon' },
-  { id: 2, label: 'Tuesday', short: 'Tue' },
-  { id: 3, label: 'Wednesday', short: 'Wed' },
-  { id: 4, label: 'Thursday', short: 'Thu' },
-  { id: 5, label: 'Friday', short: 'Fri' },
-  { id: 6, label: 'Saturday', short: 'Sat' },
+  { id: 1, label: 'Monday', short: 'Mon', date: '2026-11-09' },
+  { id: 2, label: 'Tuesday', short: 'Tue', date: '2026-11-10' },
+  { id: 3, label: 'Wednesday', short: 'Wed', date: '2026-11-11' },
+  { id: 4, label: 'Thursday', short: 'Thu', date: '2026-11-12' },
+  { id: 5, label: 'Friday', short: 'Fri', date: '2026-11-13' },
+  { id: 6, label: 'Saturday', short: 'Sat', date: '2026-11-14' },
 ];
 
 export default function StudentTimetablePage() {
   const [selectedDay, setSelectedDay] = useState(1);
-  const todayStr = '2026-11-09';
+  const activeDate = WEEKDAYS.find((d) => d.id === selectedDay)?.date || '2026-11-09';
 
-  const { data: allSlots, isLoading } = useQuery<Slot[]>({
-    queryKey: ['student-weekly-timetable', todayStr],
-    queryFn: () => api.timetable.me(todayStr),
+  const { data: daySlots = [], isLoading } = useQuery<Slot[]>({
+    queryKey: ['student-weekly-timetable', activeDate],
+    queryFn: () => api.timetable.me(activeDate),
   });
-
-  const daySlots = allSlots?.filter((s) => s.weekday === selectedDay) || [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">

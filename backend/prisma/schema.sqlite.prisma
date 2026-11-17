@@ -144,3 +144,4 @@ model AttendanceRecord {
 
   @@unique([sessionId, studentId])
 }
+

@@ -34,7 +34,7 @@ export default function LoginPage() {
     if (role === 'STUDENT') {
       emailChoice = 'student1@classradar.edu';
     } else if (role === 'FACULTY') {
-      emailChoice = 'faculty1@classradar.edu';
+      emailChoice = 'veena.mohan@classradar.edu';
     } else if (role === 'ADMIN') {
       emailChoice = 'admin@classradar.edu';
     }

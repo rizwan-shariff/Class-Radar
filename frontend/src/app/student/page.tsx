@@ -84,7 +84,7 @@ export default function StudentDashboardPage() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
             <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
-              Undergraduate Engineering · Section 3A
+              Undergraduate Engineering · Sem: III, Sec: 'F' (Room 406)
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B1C19] tracking-tight">

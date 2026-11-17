@@ -104,6 +104,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearToken();
+    }
     let errMessage = `HTTP ${response.status}: ${response.statusText}`;
     try {
       const errJson = await response.json();
@@ -117,6 +120,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   return await response.json();
+}
+
+function normalizeSlot(s: any): Slot {
+  return {
+    ...s,
+    subjectCode: s.subject?.code || s.subjectCode,
+    subjectName: s.subject?.name || s.subjectName,
+    facultyName: s.faculty?.name || s.facultyName,
+    roomName: s.room?.name || s.roomName,
+    isSubstituted: s.cancelled ? false : !!s.substitution,
+    isCancelled: !!s.cancelled,
+    substituteFacultyName: s.substitution?.substituteFaculty?.name || s.substituteFacultyName,
+  };
 }
 
 export const api = {
@@ -133,9 +149,14 @@ export const api = {
   },
 
   timetable: {
-    me: (date: string) => request<Slot[]>(`/timetable/me?date=${date}`),
-    section: (sectionId: string, date: string) =>
-      request<Slot[]>(`/timetable/section/${sectionId}?date=${date}`),
+    me: async (date: string) => {
+      const data = await request<any[]>(`/timetable/me?date=${date}`);
+      return (data || []).map(normalizeSlot);
+    },
+    section: async (sectionId: string, date: string) => {
+      const data = await request<any[]>(`/timetable/section/${sectionId}?date=${date}`);
+      return (data || []).map(normalizeSlot);
+    },
     importCsv: (formData: FormData) =>
       request<{ success: boolean; rowsImported?: number }>('/timetable/import', {
         method: 'POST',

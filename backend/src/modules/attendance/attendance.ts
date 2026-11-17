@@ -236,3 +236,4 @@ export const registerAttendanceRoutes = (
     return reply.send(summary);
   });
 };
+
