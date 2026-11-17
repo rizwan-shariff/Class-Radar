@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { PrismaClient, Role, RoomType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const DEMO_PASSWORD = 'classradar123';
@@ -15,99 +15,166 @@ const main = async (): Promise<void> => {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const sections = await Promise.all(
     departments.map((department, index) =>
-      getOrCreateSection(`${department}-A`, department, index + 1),
+      getOrCreateSection(`${department}-3A`, department, index + 1),
     ),
   );
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@classradar.demo' },
-    update: { name: 'ClassRadar Admin', passwordHash, role: Role.ADMIN, department: 'ADMIN', sectionId: null },
-    create: {
-      name: 'ClassRadar Admin',
-      email: 'admin@classradar.demo',
-      passwordHash,
-      role: Role.ADMIN,
-      department: 'ADMIN',
-    },
-  });
+  // 1. Admin account (support both demo and standard institution domains)
+  const adminEmails = ['admin@classradar.edu', 'admin@classradar.demo'];
+  for (const email of adminEmails) {
+    await prisma.user.upsert({
+      where: { email },
+      update: { name: 'ClassRadar Administrator', passwordHash, role: 'ADMIN', department: 'Academic Affairs', sectionId: null },
+      create: {
+        name: 'ClassRadar Administrator',
+        email,
+        passwordHash,
+        role: 'ADMIN',
+        department: 'Academic Affairs',
+      },
+    });
+  }
 
-  const faculty = [];
-  for (let index = 0; index < 15; index += 1) {
-    const department = departments[index % departments.length]!;
-    faculty.push(
+  // 2. Faculty accounts
+  const facultyList = [
+    { name: 'Dr. Alan Vance', email: 'faculty1@classradar.edu', dept: 'CSE' },
+    { name: 'Prof. Rajesh Kumar', email: 'faculty1@classradar.demo', dept: 'CSE' },
+    { name: 'Prof. Ananya Rao', email: 'faculty2@classradar.edu', dept: 'CSE' },
+    { name: 'Dr. Vikram Patel', email: 'faculty3@classradar.edu', dept: 'CSE' },
+    { name: 'Dr. Elena Rostova', email: 'faculty4@classradar.edu', dept: 'CSE' },
+    { name: 'Prof. Marcus Sterling', email: 'faculty5@classradar.edu', dept: 'ECE' },
+  ];
+
+  const createdFaculty = [];
+  for (const f of facultyList) {
+    createdFaculty.push(
       await prisma.user.upsert({
-        where: { email: `faculty${index + 1}@classradar.demo` },
-        update: {
-          name: `Faculty ${index + 1}`,
-          passwordHash,
-          role: Role.FACULTY,
-          department,
-          sectionId: null,
-        },
-        create: {
-          name: `Faculty ${index + 1}`,
-          email: `faculty${index + 1}@classradar.demo`,
-          passwordHash,
-          role: Role.FACULTY,
-          department,
-        },
+        where: { email: f.email },
+        update: { name: f.name, passwordHash, role: 'FACULTY', department: f.dept, sectionId: null },
+        create: { name: f.name, email: f.email, passwordHash, role: 'FACULTY', department: f.dept },
       }),
     );
   }
 
-  for (let index = 0; index < 12; index += 1) {
-    await prisma.subject.upsert({
-      where: { code: `SUB${String(index + 1).padStart(2, '0')}` },
-      update: { name: `Demo Subject ${index + 1}` },
-      create: {
-        code: `SUB${String(index + 1).padStart(2, '0')}`,
-        name: `Demo Subject ${index + 1}`,
-      },
-    });
+  // 3. Subjects
+  const subjectsData = [
+    { code: 'CS301', name: 'Design & Analysis of Algorithms' },
+    { code: 'CS402', name: 'Advanced Distributed Systems' },
+    { code: 'CS410', name: 'Computer Networks & Security' },
+    { code: 'CS580', name: 'Human-Computer Interaction' },
+    { code: 'CS590', name: 'Distributed Machine Learning' },
+    { code: 'MATH201', name: 'Linear Algebra & Discrete Math' },
+    { code: 'PHYS310', name: 'Quantum Information Lab' },
+    { code: 'ARCH304', name: 'Spatial Systems & Architecture' },
+  ];
+
+  const createdSubjects = [];
+  for (const s of subjectsData) {
+    createdSubjects.push(
+      await prisma.subject.upsert({
+        where: { code: s.code },
+        update: { name: s.name },
+        create: { code: s.code, name: s.name },
+      }),
+    );
   }
 
-  for (let index = 0; index < 12; index += 1) {
-    await prisma.room.upsert({
-      where: { name: `Room ${101 + index}` },
-      update: {
-        type: index < 8 ? RoomType.CLASSROOM : RoomType.LAB,
-        capacity: index < 8 ? 60 + index * 5 : 30 + index * 5,
-      },
-      create: {
-        name: `Room ${101 + index}`,
-        type: index < 8 ? RoomType.CLASSROOM : RoomType.LAB,
-        capacity: index < 8 ? 60 + index * 5 : 30 + index * 5,
-      },
-    });
+  // 4. Rooms
+  const roomsData = [
+    { name: 'Turing Hall 302', type: 'CLASSROOM', capacity: 120 },
+    { name: 'Turing Hall 304B', type: 'CLASSROOM', capacity: 70 },
+    { name: 'Euler Lab 2', type: 'LAB', capacity: 45 },
+    { name: 'Tesla Net-Lab 104', type: 'LAB', capacity: 60 },
+    { name: 'Glass Pavilion 12', type: 'CLASSROOM', capacity: 35 },
+    { name: 'Lecture Hall C-10', type: 'CLASSROOM', capacity: 250 },
+    { name: 'Maxwell Annex 204', type: 'CLASSROOM', capacity: 60 },
+    { name: 'Tesla Hall 509', type: 'CLASSROOM', capacity: 90 },
+  ];
+
+  const createdRooms = [];
+  for (const r of roomsData) {
+    createdRooms.push(
+      await prisma.room.upsert({
+        where: { name: r.name },
+        update: { type: r.type, capacity: r.capacity },
+        create: { name: r.name, type: r.type, capacity: r.capacity },
+      }),
+    );
   }
 
-  for (let index = 0; index < 60; index += 1) {
-    const section = sections[index % sections.length]!;
+  // 5. Students
+  const primarySection = sections[0]!;
+  const studentEmails = [
+    { email: 'student1@classradar.edu', name: 'Aarav Sharma' },
+    { email: 'student1@classradar.demo', name: 'Student 1' },
+    { email: 'student2@classradar.edu', name: 'Marcus Vance Jr.' },
+    { email: 'student3@classradar.edu', name: 'Chloe Zhao' },
+    { email: 'student4@classradar.edu', name: 'David Sterling' },
+    { email: 'student5@classradar.edu', name: 'Elena Novak' },
+  ];
+
+  for (const st of studentEmails) {
     await prisma.user.upsert({
-      where: { email: `student${index + 1}@classradar.demo` },
+      where: { email: st.email },
       update: {
-        name: `Student ${index + 1}`,
+        name: st.name,
         passwordHash,
-        role: Role.STUDENT,
-        department: section.department,
-        sectionId: section.id,
+        role: 'STUDENT',
+        department: primarySection.department,
+        sectionId: primarySection.id,
       },
       create: {
-        name: `Student ${index + 1}`,
-        email: `student${index + 1}@classradar.demo`,
+        name: st.name,
+        email: st.email,
         passwordHash,
-        role: Role.STUDENT,
-        department: section.department,
-        sectionId: section.id,
+        role: 'STUDENT',
+        department: primarySection.department,
+        sectionId: primarySection.id,
       },
     });
   }
 
-  console.log('ClassRadar demo credentials');
-  console.log(`Admin: admin@classradar.demo / ${DEMO_PASSWORD}`);
-  console.log(`Faculty: faculty1@classradar.demo / ${DEMO_PASSWORD}`);
-  console.log(`Student: student1@classradar.demo / ${DEMO_PASSWORD}`);
-  console.log(`Created or updated admin ${admin.email}, ${faculty.length} faculty, 12 subjects, 12 rooms, 3 sections, and 60 students.`);
+  // 6. Timetable Slots (Monday to Friday, periods 1 through 5)
+  for (let weekday = 1; weekday <= 5; weekday++) {
+    for (let period = 1; period <= 4; period++) {
+      const subjectIndex = (weekday + period) % createdSubjects.length;
+      const facultyIndex = (period) % createdFaculty.length;
+      const roomIndex = (weekday + period) % createdRooms.length;
+
+      const sub = createdSubjects[subjectIndex]!;
+      const fac = createdFaculty[facultyIndex]!;
+      const rm = createdRooms[roomIndex]!;
+
+      await prisma.slot.upsert({
+        where: {
+          sectionId_weekday_period: {
+            sectionId: primarySection.id,
+            weekday,
+            period,
+          },
+        },
+        update: {
+          subjectId: sub.id,
+          facultyId: fac.id,
+          roomId: rm.id,
+        },
+        create: {
+          sectionId: primarySection.id,
+          weekday,
+          period,
+          subjectId: sub.id,
+          facultyId: fac.id,
+          roomId: rm.id,
+        },
+      });
+    }
+  }
+
+  console.log('✅ Real SQL Database Seeded successfully!');
+  console.log('Credentials:');
+  console.log('  Admin:   admin@classradar.edu   / classradar123');
+  console.log('  Faculty: faculty1@classradar.edu / classradar123');
+  console.log('  Student: student1@classradar.edu / classradar123');
 };
 
 main()

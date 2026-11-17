@@ -43,3 +43,4 @@ docker compose -f docker/docker-compose.yml down
 docker compose -f docker/docker-compose.yml exec backend npx prisma migrate deploy
 docker compose -f docker/docker-compose.yml exec backend npx prisma db seed
 ```
+

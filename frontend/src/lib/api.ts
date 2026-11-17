@@ -1,6 +1,6 @@
 /**
- * Typed API Client for ClassRadar with automatic mock fallback
- * Conforms strictly to openapi.yaml
+ * Typed API Client for ClassRadar
+ * Directly connected to Fastify backend API & Real Database
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
@@ -69,12 +69,6 @@ export interface SubstituteSuggestion {
   suggestedRoom: { id: string; name: string; capacity: number };
 }
 
-export interface AnalyticsSummary {
-  roomUtilization: Array<{ roomName: string; utilizationPercent: number }>;
-  lowAttendance: Array<{ studentName: string; subjectCode: string; percentage: number }>;
-  substitutions: Array<{ facultyName: string; count: number }>;
-}
-
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('classradar_token');
@@ -93,141 +87,6 @@ export function clearToken() {
   }
 }
 
-// Fallback Mock Datasets when backend server isn't running yet
-const MOCK_USERS: Record<string, User> = {
-  'student1@classradar.edu': {
-    id: 'user-std-1',
-    name: 'Aarav Sharma',
-    email: 'student1@classradar.edu',
-    role: 'STUDENT',
-    department: 'Computer Science',
-    sectionId: 'CSE-3A',
-  },
-  'faculty1@classradar.edu': {
-    id: 'user-fac-1',
-    name: 'Prof. Rajesh Kumar',
-    email: 'faculty1@classradar.edu',
-    role: 'FACULTY',
-    department: 'Computer Science',
-  },
-  'admin@classradar.edu': {
-    id: 'user-adm-1',
-    name: 'Academic Dean Office',
-    email: 'admin@classradar.edu',
-    role: 'ADMIN',
-    department: 'Administration',
-  },
-};
-
-const MOCK_SLOTS: Slot[] = [
-  {
-    id: 'slot-1',
-    sectionId: 'CSE-3A',
-    subjectId: 'sub-1',
-    subjectCode: 'CS301',
-    subjectName: 'Design & Analysis of Algorithms',
-    facultyId: 'fac-1',
-    facultyName: 'Prof. Rajesh Kumar',
-    roomId: 'room-101',
-    roomName: 'Lecture Hall 101',
-    weekday: 1,
-    period: 1,
-  },
-  {
-    id: 'slot-2',
-    sectionId: 'CSE-3A',
-    subjectId: 'sub-2',
-    subjectCode: 'CS302',
-    subjectName: 'Database Management Systems',
-    facultyId: 'fac-2',
-    facultyName: 'Dr. Vikram Patel',
-    roomId: 'room-102',
-    roomName: 'Lecture Hall 102',
-    weekday: 1,
-    period: 2,
-    isSubstituted: true,
-    substituteFacultyName: 'Prof. Ananya Rao',
-  },
-  {
-    id: 'slot-3',
-    sectionId: 'CSE-3A',
-    subjectId: 'sub-3',
-    subjectCode: 'CS303',
-    subjectName: 'Computer Networks Lab',
-    facultyId: 'fac-3',
-    facultyName: 'Dr. Suresh Nair',
-    roomId: 'lab-2',
-    roomName: 'Systems Lab 2',
-    weekday: 1,
-    period: 3,
-  },
-  {
-    id: 'slot-4',
-    sectionId: 'CSE-3A',
-    subjectId: 'sub-4',
-    subjectCode: 'MA301',
-    subjectName: 'Discrete Mathematics',
-    facultyId: 'fac-4',
-    facultyName: 'Prof. Neha Gupta',
-    roomId: 'room-101',
-    roomName: 'Lecture Hall 101',
-    weekday: 1,
-    period: 4,
-  },
-];
-
-const MOCK_BUNK_SUMMARY: BunkSummaryItem[] = [
-  {
-    subjectId: 'sub-1',
-    subjectCode: 'CS301',
-    subjectName: 'Design & Analysis of Algorithms',
-    attended: 28,
-    total: 32,
-    percent: 88,
-    canSkip: 5,
-    mustAttend: 0,
-  },
-  {
-    subjectId: 'sub-2',
-    subjectCode: 'CS302',
-    subjectName: 'Database Management Systems',
-    attended: 20,
-    total: 30,
-    percent: 67,
-    canSkip: 0,
-    mustAttend: 10,
-  },
-  {
-    subjectId: 'sub-3',
-    subjectCode: 'CS303',
-    subjectName: 'Computer Networks Lab',
-    attended: 14,
-    total: 16,
-    percent: 88,
-    canSkip: 2,
-    mustAttend: 0,
-  },
-  {
-    subjectId: 'sub-4',
-    subjectCode: 'MA301',
-    subjectName: 'Discrete Mathematics',
-    attended: 24,
-    total: 32,
-    percent: 75,
-    canSkip: 0,
-    mustAttend: 0,
-  },
-];
-
-const MOCK_ROOMS: Room[] = [
-  { id: 'r-1', name: 'Lecture Hall 101', type: 'CLASSROOM', capacity: 70 },
-  { id: 'r-2', name: 'Lecture Hall 102', type: 'CLASSROOM', capacity: 60 },
-  { id: 'r-3', name: 'Seminar Hall B', type: 'CLASSROOM', capacity: 120 },
-  { id: 'r-4', name: 'Computing Lab 1', type: 'LAB', capacity: 45 },
-  { id: 'r-5', name: 'Networks Lab', type: 'LAB', capacity: 40 },
-  { id: 'r-6', name: 'Robotics Center', type: 'LAB', capacity: 35 },
-];
-
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers = new Headers(options.headers || {});
@@ -239,99 +98,25 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers.set('Content-Type', 'application/json');
   }
 
-  try {
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers,
-    });
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+  });
 
-    if (response.ok) {
-      return await response.json();
+  if (!response.ok) {
+    let errMessage = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const errJson = await response.json();
+      if (errJson && errJson.error) {
+        errMessage = typeof errJson.error === 'string' ? errJson.error : errJson.error.message || JSON.stringify(errJson.error);
+      }
+    } catch {
+      // non-JSON error
     }
-  } catch (netErr) {
-    // Backend offline: seamlessly fallback to realistic mock responses
-    // as defined in Phase 0 / Phase 3 specifications.
+    throw new Error(errMessage);
   }
 
-  // --- MOCK FALLBACK HANDLERS ---
-  if (path.startsWith('/auth/login')) {
-    const body = options.body ? JSON.parse(options.body as string) : {};
-    const email = body.email || 'student1@classradar.edu';
-    const mockUser = MOCK_USERS[email] || {
-      id: 'mock-user-id',
-      name: email.split('@')[0],
-      email: email,
-      role: email.includes('admin') ? 'ADMIN' : email.includes('faculty') ? 'FACULTY' : 'STUDENT',
-      department: 'Computer Science',
-      sectionId: 'CSE-3A',
-    };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('classradar_user', JSON.stringify(mockUser));
-    }
-    return { token: 'mock-jwt-token-active' } as unknown as T;
-  }
-
-  if (path.startsWith('/auth/me')) {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('classradar_user');
-      if (stored) return JSON.parse(stored) as T;
-    }
-    return MOCK_USERS['student1@classradar.edu'] as unknown as T;
-  }
-
-  if (path.startsWith('/timetable/me') || path.startsWith('/timetable/section')) {
-    return MOCK_SLOTS as unknown as T;
-  }
-
-  if (path.startsWith('/attendance/me/summary')) {
-    return MOCK_BUNK_SUMMARY as unknown as T;
-  }
-
-  if (path.startsWith('/rooms/free') || path.startsWith('/rooms')) {
-    return MOCK_ROOMS as unknown as T;
-  }
-
-  if (path.startsWith('/absences')) {
-    return [
-      {
-        id: 'abs-1',
-        facultyId: 'fac-1',
-        facultyName: 'Prof. Rajesh Kumar',
-        date: '2026-11-09',
-        periods: [2, 3],
-        reason: 'University Research Symposium',
-      },
-    ] as unknown as T;
-  }
-
-  if (path.startsWith('/analytics/room-utilization')) {
-    return [
-      { roomName: 'Lecture Hall 101', utilizationPercent: 82 },
-      { roomName: 'Lecture Hall 102', utilizationPercent: 68 },
-      { roomName: 'Networks Lab', utilizationPercent: 75 },
-      { roomName: 'Computing Lab 1', utilizationPercent: 90 },
-    ] as unknown as T;
-  }
-
-  if (path.startsWith('/analytics/low-attendance')) {
-    return [
-      { studentName: 'Rohan Verma', subjectCode: 'CS302', percentage: 67 },
-      { studentName: 'Pooja Iyer', subjectCode: 'CS302', percentage: 71 },
-    ] as unknown as T;
-  }
-
-  if (path.startsWith('/analytics/substitutions')) {
-    return [
-      { facultyName: 'Prof. Ananya Rao', count: 4 },
-      { facultyName: 'Dr. Vikram Patel', count: 2 },
-    ] as unknown as T;
-  }
-
-  if (path.startsWith('/attendance/scan')) {
-    return { success: true, markedAt: new Date().toISOString() } as unknown as T;
-  }
-
-  return { success: true } as unknown as T;
+  return await response.json();
 }
 
 export const api = {
@@ -370,8 +155,8 @@ export const api = {
   },
 
   rooms: {
-    list: () => request<Room[]>('/rooms'),
-    free: (params: { date: string; period: number; type?: 'CLASSROOM' | 'LAB'; minCapacity?: number }) => {
+    all: () => request<Room[]>('/rooms'),
+    free: (params: { date: string; period: number; type?: string; minCapacity?: number }) => {
       const query = new URLSearchParams({
         date: params.date,
         period: params.period.toString(),

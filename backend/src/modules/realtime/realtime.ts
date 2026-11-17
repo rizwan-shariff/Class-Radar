@@ -57,11 +57,21 @@ export const attachRealtime = (
     transports: ['websocket', 'polling'],
   });
 
-  // Redis pub/sub adapter for horizontal scaling
-  if (process.env.NODE_ENV !== 'test') {
-    const pubClient = new Redis(redisUrl);
-    const subClient = pubClient.duplicate();
-    io.adapter(createAdapter(pubClient as never, subClient as never));
+  // Redis pub/sub adapter for horizontal scaling (if REDIS_URL is provided and reachable)
+  if (process.env.NODE_ENV !== 'test' && process.env.REDIS_URL) {
+    try {
+      const pubClient = new Redis(redisUrl, { lazyConnect: true, retryStrategy: () => null });
+      pubClient.on('error', () => {}); // silence offline redis warnings
+      const subClient = pubClient.duplicate();
+      subClient.on('error', () => {});
+      pubClient.connect().then(() => {
+        subClient.connect().then(() => {
+          io.adapter(createAdapter(pubClient as never, subClient as never));
+        }).catch(() => {});
+      }).catch(() => {});
+    } catch {
+      // In-memory socket adapter fallback
+    }
   }
 
   // ── JWT Authentication middleware ──────────────────────────────────────────

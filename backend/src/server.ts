@@ -4,6 +4,9 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret_classradar_2026';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
+
 import {
   registerAuthRoutes,
   type AuthDependencies,
@@ -21,8 +24,16 @@ import { registerTimetableRoutes } from './modules/timetable/timetable.js';
 import type { TimetableDependencies } from './modules/timetable/timetable.js';
 import { registerRoomRoutes } from './modules/rooms/rooms.js';
 import type { RoomDependencies } from './modules/rooms/rooms.js';
+import { registerAttendanceRoutes } from './modules/attendance/attendance.js';
 
-export const prisma = new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
+export const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: databaseUrl,
+    },
+  },
+});
 
 /** Prisma-backed dependency object for modules that share the same DB client. */
 const makePrismaDeps = (db: PrismaClient) => ({
@@ -34,6 +45,7 @@ const makePrismaDeps = (db: PrismaClient) => ({
   room: db.room,
   section: db.section,
   attendanceRecord: db.attendanceRecord,
+  attendanceSession: db.attendanceSession,
   subject: db.subject,
   $transaction: db.$transaction.bind(db),
 });
@@ -55,6 +67,7 @@ export const buildServer = (
   registerAnalyticsRoutes(app, moduleDependencies as unknown as AnalyticsDependencies);
   registerTimetableRoutes(app, moduleDependencies as unknown as TimetableDependencies);
   registerRoomRoutes(app, moduleDependencies as unknown as RoomDependencies);
+  registerAttendanceRoutes(app, moduleDependencies as any);
 
   return app;
 };

@@ -41,3 +41,4 @@ COPY backend/ ./
 EXPOSE 3000
 
 CMD ["npx", "tsx", "src/server.ts"]
+
