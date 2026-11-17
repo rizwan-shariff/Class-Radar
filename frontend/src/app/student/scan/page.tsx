@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {
   QrCode,
@@ -15,7 +16,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Sparkles,
-  Info
+  Info,
+  Lock,
+  Radio
 } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { QRCodeSVG } from 'qrcode.react';
@@ -29,6 +32,16 @@ export default function StudentScanPage() {
 
   const [mobileUrl, setMobileUrl] = useState('');
 
+  // Poll for faculty active attendance session authorization
+  const { data: sessionAuth, isLoading: isCheckingAuth, refetch: refetchAuth } = useQuery({
+    queryKey: ['active-attendance-session'],
+    queryFn: () => api.attendance.checkActiveSession(),
+    refetchInterval: 5000, // checks every 5s if faculty opened a session
+  });
+
+  const isSessionAllowed = sessionAuth?.active === true;
+  const activeSessionInfo = sessionAuth?.session;
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setMobileUrl(window.location.href);
@@ -37,6 +50,12 @@ export default function StudentScanPage() {
 
   const submitToken = async (tokenToSubmit: string) => {
     if (!tokenToSubmit.trim()) return;
+    if (!isSessionAllowed) {
+      setStatus('error');
+      setMessage('Attendance is currently locked. Your faculty instructor has not enabled the attendance session yet.');
+      return;
+    }
+
     setStatus('scanning');
     setMessage(null);
 
@@ -63,6 +82,12 @@ export default function StudentScanPage() {
   };
 
   const startCamera = async () => {
+    if (!isSessionAllowed) {
+      setStatus('error');
+      setMessage('Cannot start camera. Your faculty instructor has not enabled the live attendance session.');
+      return;
+    }
+
     try {
       setStatus('idle');
       setMessage(null);
@@ -100,17 +125,13 @@ export default function StudentScanPage() {
             const qrEdge = Math.floor(minEdge * 0.75);
             return { width: qrEdge, height: qrEdge };
           },
-          aspectRatio: 1.0,
         },
         (decodedText) => {
           submitToken(decodedText);
         },
-        () => {
-          // ignore scan frame misses
-        }
+        () => {}
       );
     } catch (err: any) {
-      console.error('Camera initialization error:', err);
       setIsCameraActive(false);
       setMessage(
         err?.message?.includes('Permission')
@@ -165,16 +186,16 @@ export default function StudentScanPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#CFC5B8]/40 pb-6">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
+            <span className={`w-2 h-2 rounded-full ${isSessionAllowed ? 'bg-[#30A46C] animate-pulse' : 'bg-[#BA1A1A]'}`} />
             <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
-              Cryptographic Anti-Proxy Verification
+              {isSessionAllowed ? 'Faculty Permission Granted · Live Session Open' : 'Faculty Permission Required · Locked'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B1C19] tracking-tight">
             Lecture Attendance Verification
           </h1>
           <p className="text-sm text-[#4C463C] mt-1 max-w-2xl">
-            Scan the dynamic 10-second rotating cryptographic session token displayed on your instructor's podium screen.
+            Scan and verify is gated: it activates strictly when your course faculty launches and permits an attendance session from their dashboard.
           </p>
         </div>
 
@@ -188,6 +209,55 @@ export default function StudentScanPage() {
           </Link>
         </div>
       </div>
+
+      {/* Permission State Banner */}
+      {!isSessionAllowed ? (
+        <div className="rounded-3xl bg-[#FFDAD6]/40 border border-[#BA1A1A]/30 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center shrink-0">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[#1B1C19]">
+                Attendance Verification is Currently Inactive
+              </h3>
+              <p className="text-xs text-[#7E766B] mt-0.5">
+                Your instructor has not opened the attendance session yet. When the faculty starts the session, this portal unlocks automatically.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => refetchAuth()}
+            className="py-2 px-4 rounded-full bg-white border border-[#CFC5B8] hover:bg-[#F0EEE9] text-xs font-bold text-[#1B1C19] transition shrink-0"
+          >
+            Refresh Status
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-3xl bg-[#E7F5ED] border border-[#30A46C]/40 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#30A46C] text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Radio className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#30A46C] text-white">
+                  Live Attendance Allowed
+                </span>
+                <span className="text-xs font-bold text-[#1B1C19]">
+                  {activeSessionInfo?.subjectCode} — {activeSessionInfo?.subjectName}
+                </span>
+              </div>
+              <p className="text-xs text-[#4C463C] mt-1">
+                Instructor: <strong>{activeSessionInfo?.facultyName || 'Faculty'}</strong> · Room: <strong>{activeSessionInfo?.roomName || 'Room 406'}</strong>
+              </p>
+            </div>
+          </div>
+          <div className="text-xs font-semibold text-[#30A46C] bg-white px-3.5 py-1.5 rounded-full border border-[#30A46C]/30 shadow-xs">
+            Ready to Verify
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* DESKTOP / LAPTOP PRESENTATION (hidden md:grid) */}
@@ -207,13 +277,13 @@ export default function StudentScanPage() {
                   Laptop Interface Mode
                 </span>
                 <h3 className="text-xl font-bold text-[#1B1C19]">
-                  Camera Scanner is Optimized for Mobile
+                  Camera Scanner is Handheld Mobile Only
                 </h3>
               </div>
             </div>
 
             <p className="text-sm text-[#4C463C] leading-relaxed mb-6">
-              To prevent accidental proxy check-ins and maintain strict optical angle verification with the instructor's rotating QR token, <strong>live camera scanning is designated for handheld mobile devices</strong>.
+              To prevent accidental proxy check-ins and maintain strict optical angle verification with the instructor's rotating QR token, <strong>camera scanning is strictly designated for handheld mobile devices</strong>.
             </p>
 
             <div className="bg-[#FFFFFF]/90 rounded-2xl p-6 border border-[#CFC5B8]/50 flex flex-col sm:flex-row items-center gap-6 shadow-sm">
@@ -248,44 +318,44 @@ export default function StudentScanPage() {
             {/* Step-by-step guidance */}
             <div className="mt-8 grid grid-cols-3 gap-4 pt-6 border-t border-[#CFC5B8]/40">
               <div className="space-y-1">
-                <div className="w-6 h-6 rounded-full bg-[#6C5939] text-white flex items-center justify-center text-xs font-bold">1</div>
-                <h5 className="text-xs font-bold text-[#1B1C19]">Open on Phone</h5>
-                <p className="text-[11px] text-[#7E766B]">Scan the companion QR or visit the URL on your mobile browser.</p>
+                <span className="text-[10px] font-bold text-[#86724F] uppercase">Step 01</span>
+                <p className="text-xs font-bold text-[#1B1C19]">Faculty Permission</p>
+                <p className="text-[11px] text-[#7E766B]">Instructor clicks launch on their screen.</p>
               </div>
               <div className="space-y-1">
-                <div className="w-6 h-6 rounded-full bg-[#6C5939] text-white flex items-center justify-center text-xs font-bold">2</div>
-                <h5 className="text-xs font-bold text-[#1B1C19]">Point at Screen</h5>
-                <p className="text-[11px] text-[#7E766B]">Aim your phone camera directly at the instructor's rotating QR token.</p>
+                <span className="text-[10px] font-bold text-[#86724F] uppercase">Step 02</span>
+                <p className="text-xs font-bold text-[#1B1C19]">Open on Mobile</p>
+                <p className="text-[11px] text-[#7E766B]">Use phone back camera to scan podium QR.</p>
               </div>
               <div className="space-y-1">
-                <div className="w-6 h-6 rounded-full bg-[#6C5939] text-white flex items-center justify-center text-xs font-bold">3</div>
-                <h5 className="text-xs font-bold text-[#1B1C19]">Instant Verification</h5>
-                <p className="text-[11px] text-[#7E766B]">Your attendance is signed and marked securely in under 2 seconds.</p>
+                <span className="text-[10px] font-bold text-[#86724F] uppercase">Step 03</span>
+                <p className="text-xs font-bold text-[#1B1C19]">Heatmap Updated</p>
+                <p className="text-[11px] text-[#7E766B]">Instant update to your and faculty's progress matrix.</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Manual Token Entry & Emergency Verification on Laptop (Span 5) */}
+        {/* Right Column: Laptop Direct Token Fallback (Span 5) */}
         <div className="col-span-5 space-y-6">
-          <div className="glass-panel rounded-3xl p-8 border border-[#CFC5B8]/60 shadow-lg space-y-6">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-[#86724F]/10 text-[#6C5939] flex items-center justify-center">
-                <KeyRound className="w-5 h-5" />
+          <div className="glass-panel rounded-3xl p-7 border border-[#CFC5B8]/60 shadow-lg space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#F0EEE9] text-[#6C5939] flex items-center justify-center">
+                <Laptop className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#1B1C19]">
-                  Manual Token Verification
-                </h3>
-                <span className="text-[11px] text-[#7E766B]">
-                  For laptop users with instructor-provided passkeys
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86724F]">
+                  Laptop Fallback
                 </span>
+                <h3 className="text-base font-bold text-[#1B1C19]">
+                  Token Verification Entry
+                </h3>
               </div>
             </div>
 
             {status === 'success' ? (
-              <div className="p-6 rounded-2xl bg-[#E7DFD1]/50 border border-[#86724F]/30 text-center space-y-3 animate-in zoom-in-95">
-                <div className="w-14 h-14 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
+              <div className="p-6 rounded-2xl bg-[#E7DFD1]/50 border border-[#6C5939]/30 text-center space-y-3 animate-in zoom-in-95">
+                <div className="w-14 h-14 rounded-full bg-[#6C5939] text-white flex items-center justify-center mx-auto">
                   <CheckCircle className="w-8 h-8" />
                 </div>
                 <h4 className="text-base font-bold text-[#1B1C19]">Attendance Confirmed</h4>
@@ -306,7 +376,7 @@ export default function StudentScanPage() {
                 <div className="w-14 h-14 rounded-full bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center mx-auto">
                   <AlertCircle className="w-8 h-8" />
                 </div>
-                <h4 className="text-base font-bold text-[#BA1A1A]">Verification Failed</h4>
+                <h4 className="text-base font-bold text-[#BA1A1A]">Verification Notice</h4>
                 <p className="text-xs text-[#93000A]">{message}</p>
                 <button
                   onClick={() => {
@@ -321,7 +391,7 @@ export default function StudentScanPage() {
             ) : (
               <form onSubmit={handleManualSubmit} className="space-y-4">
                 <p className="text-xs text-[#4C463C]">
-                  If you are using a laptop in class and your instructor provides a short-lived manual passkey or JWT token, paste it below to register your presence:
+                  If you are using a laptop and your instructor has allowed the attendance session, paste the active token below:
                 </p>
 
                 <div className="space-y-1.5">
@@ -330,20 +400,23 @@ export default function StudentScanPage() {
                   </label>
                   <textarea
                     rows={4}
+                    disabled={!isSessionAllowed}
                     value={manualToken}
                     onChange={(e) => setManualToken(e.target.value)}
-                    placeholder="e.g. CR-QR-CS301-17319582910-A9F32 or encoded payload..."
-                    className="w-full p-3.5 rounded-2xl bg-white border border-[#CFC5B8] text-xs font-mono text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30 resize-none"
+                    placeholder={isSessionAllowed ? "Paste active token..." : "Locked until faculty opens session..."}
+                    className="w-full p-3.5 rounded-2xl bg-white border border-[#CFC5B8] text-xs font-mono text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30 resize-none disabled:bg-[#F0EEE9]/50 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  disabled={status === 'scanning' || !manualToken.trim()}
+                  disabled={!isSessionAllowed || status === 'scanning' || !manualToken.trim()}
                   className="w-full py-3 px-5 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {status === 'scanning' ? (
                     <span>Verifying with Campus Authority...</span>
+                  ) : !isSessionAllowed ? (
+                    <span>Locked: Awaiting Faculty Activation</span>
                   ) : (
                     <>
                       <span>Submit Token for Verification</span>
@@ -357,7 +430,7 @@ export default function StudentScanPage() {
             <div className="p-4 rounded-2xl bg-[#F0EEE9]/70 border border-[#CFC5B8]/40 flex items-start gap-3">
               <Info className="w-4 h-4 text-[#86724F] shrink-0 mt-0.5" />
               <p className="text-[11px] text-[#7E766B] leading-relaxed">
-                <strong>Anti-Proxy Notice:</strong> Session tokens expire every 10 seconds. Manually shared tokens are tied to active session windows and reject expired submissions automatically.
+                <strong>Anti-Proxy Security:</strong> Scan and verification requests are cryptographically verified and will only be accepted if your instructor currently has an open session on their podium screen.
               </p>
             </div>
           </div>
@@ -375,7 +448,7 @@ export default function StudentScanPage() {
               <div className="w-16 h-16 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
                 <CheckCircle className="w-9 h-9" />
               </div>
-              <h3 className="text-base font-bold text-[#1B1C19]">Attendance Recorded!</h3>
+              <h3 className="text-base font-bold text-[#1B1C19]">Attendance Confirmed</h3>
               <p className="text-xs text-[#4C463C] max-w-xs mx-auto">{message}</p>
               <button
                 onClick={() => {
@@ -417,20 +490,25 @@ export default function StudentScanPage() {
 
               {!isCameraActive && (
                 <div className="w-64 h-64 rounded-3xl border-2 border-dashed border-[#6C5939]/60 relative flex flex-col items-center justify-center bg-[#F6F3EE]/60 p-4 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mb-3">
-                    <QrCode className="w-8 h-8" />
+                  <div className={`w-16 h-16 rounded-2xl ${isSessionAllowed ? 'bg-[#E7DFD1] text-[#6C5939]' : 'bg-[#FFDAD6] text-[#BA1A1A]'} flex items-center justify-center mb-3`}>
+                    {isSessionAllowed ? <QrCode className="w-8 h-8" /> : <Lock className="w-8 h-8" />}
                   </div>
-                  <p className="text-sm font-bold text-[#1B1C19]">Optical Camera Ready</p>
+                  <p className="text-sm font-bold text-[#1B1C19]">
+                    {isSessionAllowed ? 'Optical Camera Ready' : 'Scanning Locked'}
+                  </p>
                   <p className="text-[11px] text-[#7E766B] mt-1 mb-4">
-                    Tap below to launch your phone's back camera
+                    {isSessionAllowed
+                      ? 'Tap below to launch your phone camera'
+                      : 'Faculty must permit the session first'}
                   </p>
                   <button
                     type="button"
+                    disabled={!isSessionAllowed}
                     onClick={startCamera}
-                    className="py-2.5 px-5 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition"
+                    className="py-2.5 px-5 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition disabled:opacity-50"
                   >
                     <Camera className="w-4 h-4" />
-                    <span>Open Camera</span>
+                    <span>{isSessionAllowed ? 'Open Camera' : 'Awaiting Faculty'}</span>
                   </button>
                 </div>
               )}
@@ -464,14 +542,15 @@ export default function StudentScanPage() {
           <form onSubmit={handleManualSubmit} className="flex gap-2">
             <input
               type="text"
+              disabled={!isSessionAllowed}
               value={manualToken}
               onChange={(e) => setManualToken(e.target.value)}
-              placeholder="Paste token or passcode..."
-              className="flex-1 py-2.5 px-3 rounded-2xl bg-[#FFFFFF] border border-[#CFC5B8]/80 text-xs text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30"
+              placeholder={isSessionAllowed ? "Paste token or passcode..." : "Locked until faculty opens session..."}
+              className="flex-1 py-2.5 px-3 rounded-2xl bg-[#FFFFFF] border border-[#CFC5B8]/80 text-xs text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30 disabled:bg-[#F0EEE9]/50"
             />
             <button
               type="submit"
-              disabled={status === 'scanning' || !manualToken}
+              disabled={!isSessionAllowed || status === 'scanning' || !manualToken}
               className="py-2.5 px-4 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-semibold transition disabled:opacity-50 shrink-0"
             >
               {status === 'scanning' ? 'Verifying...' : 'Submit'}

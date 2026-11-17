@@ -246,5 +246,32 @@ export const api = {
         body: JSON.stringify({ status }),
       }),
     summary: () => request<BunkSummaryItem[]>('/attendance/me/summary'),
+    checkActiveSession: () =>
+      request<{
+        active: boolean;
+        session: {
+          id: string;
+          slotId: string;
+          startedAt: string;
+          subjectCode?: string;
+          subjectName?: string;
+          facultyName?: string;
+          roomName?: string;
+        } | null;
+      }>('/attendance/active-session'),
+    studentHistory: (subjectId?: string) =>
+      request<any[]>(subjectId ? `/attendance/student-history?subjectId=${subjectId}` : '/attendance/student-history'),
+    facultyMatrix: () =>
+      request<
+        Array<{
+          studentId: string;
+          studentName: string;
+          studentEmail: string;
+          attended: number;
+          total: number;
+          percentage: number;
+          records: Array<{ date: string; status: string; subjectCode?: string }>;
+        }>
+      >('/attendance/faculty-matrix'),
   },
 };

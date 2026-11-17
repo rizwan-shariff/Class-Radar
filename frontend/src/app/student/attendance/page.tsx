@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, BunkSummaryItem } from '@/lib/api';
+import { AttendanceHeatmap } from '@/components/AttendanceHeatmap';
 import {
   AlertTriangle,
   CheckCircle,
@@ -12,11 +13,16 @@ import {
   TrendingUp,
   Clock,
   Sparkles,
-  BookOpen
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  LayoutGrid
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function StudentAttendancePage() {
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+
   const { data: summary, isLoading, error } = useQuery<BunkSummaryItem[]>({
     queryKey: ['student-attendance-summary'],
     queryFn: () => api.attendance.summary(),
@@ -97,6 +103,7 @@ export default function StudentAttendancePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {summary.map((item) => {
               const isSafe = item.percent >= 75;
+              const isExpanded = selectedSubjectId === item.subjectId;
 
               return (
                 <div
@@ -150,7 +157,7 @@ export default function StudentAttendancePage() {
                   </div>
 
                   {/* Bunk Forecast Calculation */}
-                  <div className="pt-3 border-t border-[#CFC5B8]/40 pl-2">
+                  <div className="pt-3 border-t border-[#CFC5B8]/40 pl-2 space-y-3">
                     {isSafe ? (
                       <div className="flex items-center gap-2 text-xs text-[#6C5939] font-medium">
                         <ShieldCheck className="w-4 h-4 shrink-0" />
@@ -164,6 +171,30 @@ export default function StudentAttendancePage() {
                         <span>
                           Must attend next <strong className="font-extrabold">{item.mustAttend}</strong> class(es) to recover 75%
                         </span>
+                      </div>
+                    )}
+
+                    {/* Heatmap Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSubjectId(isExpanded ? null : item.subjectId)}
+                      className="w-full py-2 px-3 rounded-2xl bg-[#F0EEE9] hover:bg-[#E5E2DD] text-[#1B1C19] text-xs font-bold flex items-center justify-between transition"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <LayoutGrid className="w-3.5 h-3.5 text-[#6C5939]" />
+                        <span>{isExpanded ? 'Hide Activity Heatmap' : 'View Attendance Heatmap'}</span>
+                      </span>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+
+                    {/* LeetCode / GitHub style Heatmap Box Matrix */}
+                    {isExpanded && (
+                      <div className="pt-2 border-t border-[#CFC5B8]/30 animate-in fade-in duration-200">
+                        <AttendanceHeatmap
+                          studentName={item.subjectCode}
+                          totalDays={60}
+                          attendedCount={item.attended * 2}
+                        />
                       </div>
                     )}
                   </div>

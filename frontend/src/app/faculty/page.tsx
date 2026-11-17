@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, Slot } from '@/lib/api';
+import { AttendanceHeatmap } from '@/components/AttendanceHeatmap';
 import {
   Calendar,
   Clock,
@@ -17,7 +18,11 @@ import {
   Info,
   ShieldCheck,
   Check,
-  X
+  X,
+  LayoutGrid,
+  ChevronDown,
+  ChevronUp,
+  UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -27,10 +32,16 @@ export default function FacultyDashboardPage() {
   const [absentPeriods, setAbsentPeriods] = useState<number[]>([]);
   const [absentReason, setAbsentReason] = useState('');
   const [absentSuccess, setAbsentSuccess] = useState(false);
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
 
   const { data: slots, isLoading, refetch } = useQuery<Slot[]>({
     queryKey: ['faculty-schedule', selectedDate],
     queryFn: () => api.timetable.me(selectedDate),
+  });
+
+  const { data: studentMatrix, isLoading: isMatrixLoading } = useQuery({
+    queryKey: ['faculty-student-matrix'],
+    queryFn: () => api.attendance.facultyMatrix(),
   });
 
   const handleTogglePeriod = (period: number) => {
@@ -265,13 +276,106 @@ export default function FacultyDashboardPage() {
                       className="px-5 py-2.5 rounded-full bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold flex items-center gap-2 transition shadow-sm active:scale-95"
                     >
                       <QrCode className="w-4 h-4" />
-                      <span>Launch QR Attendance Screen</span>
+                      <span>Allow & Launch QR Screen</span>
                     </Link>
                   </div>
                 </div>
               </article>
             );
           })
+        )}
+      </section>
+
+      {/* Student Attendance Matrix & Activity Heatmap Section */}
+      <section className="space-y-4 pt-4 border-t border-[#CFC5B8]/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-[#86724F]" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F]">
+              Enrolled Class Attendance & Heatmap Analytics (Sem: III, Sec: 'F')
+            </h2>
+          </div>
+          <span className="text-xs text-[#7E766B]">
+            LeetCode & GitHub Style Activity Presence
+          </span>
+        </div>
+
+        {isMatrixLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 rounded-2xl bg-[#F0EEE9]/70 animate-pulse border border-[#CFC5B8]/40" />
+            ))}
+          </div>
+        ) : !studentMatrix || studentMatrix.length === 0 ? (
+          <div className="glass-panel p-8 rounded-3xl text-center border border-[#CFC5B8]/50 text-xs text-[#7E766B]">
+            No enrolled students found in this section.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {studentMatrix.map((st: any) => {
+              const isExpanded = expandedStudentId === st.studentId;
+              const isSafe = st.percentage >= 75;
+
+              return (
+                <div
+                  key={st.studentId}
+                  className="rounded-3xl bg-white/95 backdrop-blur-xl border border-[#CFC5B8]/60 p-5 shadow-sm transition-all duration-200 space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center font-bold text-sm shrink-0">
+                        {st.studentName.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-[#1B1C19]">{st.studentName}</h4>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isSafe ? 'bg-[#E7DFD1] text-[#6C5939]' : 'bg-[#FFDAD6] text-[#93000A]'
+                            }`}
+                          >
+                            {st.percentage}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#7E766B]">{st.studentEmail}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="text-right hidden sm:block">
+                        <span className="text-xs font-bold text-[#1B1C19]">{st.attended} / {st.total}</span>
+                        <span className="block text-[10px] text-[#7E766B]">Sessions Attended</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedStudentId(isExpanded ? null : st.studentId)}
+                        className="py-1.5 px-3.5 rounded-xl bg-[#F0EEE9] hover:bg-[#E5E2DD] text-xs font-bold text-[#1B1C19] flex items-center gap-1.5 transition"
+                      >
+                        <LayoutGrid className="w-3.5 h-3.5 text-[#6C5939]" />
+                        <span>{isExpanded ? 'Hide Heatmap' : 'Inspect Heatmap'}</span>
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* LeetCode / GitHub Style Box Heatmap for Individual Student */}
+                  {isExpanded && (
+                    <div className="pt-3 border-t border-[#CFC5B8]/40 animate-in fade-in duration-200">
+                      <div className="mb-2 text-xs font-semibold text-[#4C463C]">
+                        60-Day Progress & Lecture Regularity Matrix:
+                      </div>
+                      <AttendanceHeatmap
+                        studentName={st.studentName}
+                        totalDays={60}
+                        attendedCount={st.attended * 2}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
