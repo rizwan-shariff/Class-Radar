@@ -120,6 +120,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  setAuthToken: (token: string) => {
+    setToken(token);
+  },
   auth: {
     login: (credentials: { email: string; password: string }) =>
       request<{ token: string }>('/auth/login', {

@@ -19,6 +19,7 @@ export default function LoginPage() {
 
     try {
       const res = await api.auth.login({ email, password });
+      api.setAuthToken(res.token);
       const userProfile = await api.auth.me();
       login(res.token, userProfile);
     } catch (err: any) {
@@ -44,6 +45,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await api.auth.login({ email: emailChoice, password: 'classradar123' });
+      api.setAuthToken(res.token);
       const userProfile = await api.auth.me();
       login(res.token, userProfile);
     } catch (e: any) {
