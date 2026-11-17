@@ -51,9 +51,8 @@ The project is structured as a **pnpm workspaces monorepo**:
 
 ```
 Class-Radar/
-├── apps/
-│   ├── api/             # Backend Fastify API, Prisma ORM, Socket.IO & Redis
-│   └── web/             # Frontend Next.js 14 (App Router), Tailwind CSS & PWA
+├── backend/             # Backend Fastify API, Prisma ORM, Socket.IO & Redis
+├── frontend/            # Frontend Next.js 14 (App Router), Tailwind CSS & PWA
 ├── templates/           # 17 Exported Google Stitch High-Fidelity Design Templates
 ├── openapi.yaml         # Single Source of Truth REST API Contract
 ├── SPEC.md              # Project Specifications & Feature Acceptance Criteria
@@ -62,16 +61,16 @@ Class-Radar/
 └── pnpm-workspace.yaml  # pnpm Package Workspace Setup
 ```
 
-### Frontend (`apps/web`)
+### Frontend (`frontend`)
 - **Framework:** Next.js 14 (App Router, React 19)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS with Sand & Titanium Liquid Glass tokens
 - **State & Data Fetching:** TanStack React Query (`@tanstack/react-query`)
 - **Realtime Client:** Socket.IO Client (`socket.io-client`)
 - **Camera & QR:** `qrcode.react` (generation) & `html5-qrcode` (camera capture)
-- **UI Components & Icons:** Lucide React icons, floating liquid glass bottom navigation
+- **UI Components & Icons:** Lucide React icons, desktop top navigation & floating liquid glass bottom navigation
 
-### Backend (`apps/api`)
+### Backend (`backend`)
 - **Runtime & Server:** Node.js 20, Fastify
 - **Data Validation:** Zod schemas for all request payloads and queries
 - **Database:** PostgreSQL 16 managed via Prisma ORM
