@@ -247,7 +247,52 @@ const main = async (): Promise<void> => {
     });
   }
 
-  console.log('✅ Successfully loaded real Class timetable (Sem III, Sec F, Room 406)!');
+  console.log('📊 Seeding realistic Attendance Sessions & Historical Records for Heatmap and Analytics...');
+  const allSlots = await prisma.slot.findMany({ include: { subject: true, faculty: true } });
+  const allStudents = await prisma.user.findMany({ where: { role: 'STUDENT' } });
+
+  // Generate 20 historical sessions across September - November 2026
+  const baseDate = new Date(2026, 8, 1); // Sept 1, 2026
+  for (let d = 0; d < 35; d++) {
+    const curDate = new Date(baseDate);
+    curDate.setDate(baseDate.getDate() + d);
+    const dayOfWeek = curDate.getDay(); // 0 = Sun, 6 = Sat
+    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
+    // Pick 1-2 slots for that weekday
+    const daySlots = allSlots.filter((sl) => sl.weekday === dayOfWeek);
+    for (const targetSlot of daySlots.slice(0, 2)) {
+      const sess = await prisma.attendanceSession.create({
+        data: {
+          slotId: targetSlot.id,
+          date: curDate,
+          startedById: targetSlot.facultyId,
+          status: 'CLOSED',
+          startedAt: curDate,
+          closedAt: new Date(curDate.getTime() + 50 * 60 * 1000),
+        },
+      });
+
+      // Mark records for students with realistic ~80-90% attendance
+      for (const st of allStudents) {
+        const hash = (st.name.charCodeAt(0) + d * 17) % 100;
+        const isPresent = hash < 85;
+        if (isPresent) {
+          await prisma.attendanceRecord.create({
+            data: {
+              sessionId: sess.id,
+              studentId: st.id,
+              status: 'PRESENT',
+              method: 'SCAN',
+              markedAt: new Date(curDate.getTime() + 5 * 60 * 1000),
+            },
+          });
+        }
+      }
+    }
+  }
+
+  console.log('✅ Successfully loaded real Class timetable & attendance records (Sem III, Sec F, Room 406)!');
   console.log('Login credentials:');
   console.log('  Student: student1@classradar.edu / classradar123 (Shaik Zayan Ahmed - Sec F)');
   console.log('  Faculty: veena.mohan@classradar.edu / classradar123 (Mrs. Veena Mohan - DDCO)');
