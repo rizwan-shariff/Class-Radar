@@ -46,41 +46,41 @@
 }
 
 html.dark {
-  /* Chromium Greyish Dark Mode Design Tokens */
-  --background: #202124;
+  /* Chromium Deep Frosted Glass Dark Design Tokens */
+  --background: #18191C;
   --foreground: #E8EAED;
 
-  --surface: #202124;
-  --surface-dim: #171719;
-  --surface-bright: #292A2D;
-  --surface-container-lowest: #1F2023;
-  --surface-container-low: #28292C;
-  --surface-container: #2F3033;
-  --surface-container-high: #35363A;
-  --surface-container-highest: #3C4043;
+  --surface: #18191C;
+  --surface-dim: #131416;
+  --surface-bright: #232529;
+  --surface-container-lowest: #1E2024;
+  --surface-container-low: #25272C;
+  --surface-container: #2B2D33;
+  --surface-container-high: #32353B;
+  --surface-container-highest: #3B3E45;
 
-  --on-surface: #E8EAED;
+  --on-surface: #F1F3F4;
   --on-surface-variant: #9AA0A6;
   --outline: #5F6368;
   --outline-variant: #3C4043;
 
   --primary: #8AB4F8;
-  --on-primary: #202124;
-  --primary-container: #3C4043;
-  --on-primary-container: #E8EAED;
+  --on-primary: #18191C;
+  --primary-container: #2A364F;
+  --on-primary-container: #D2E3FC;
 
   --secondary: #9AA0A6;
-  --on-secondary: #202124;
-  --secondary-container: #35363A;
+  --on-secondary: #18191C;
+  --secondary-container: #32353B;
   --on-secondary-container: #E8EAED;
 
   --tertiary: #BDC1C6;
-  --on-tertiary: #202124;
-  --tertiary-container: #3C4043;
+  --on-tertiary: #18191C;
+  --tertiary-container: #3B3E45;
   --on-tertiary-container: #E8EAED;
 
   --error: #F28B82;
-  --on-error: #202124;
+  --on-error: #18191C;
   --error-container: #5C1D18;
   --on-error-container: #F6AEA9;
 }
@@ -92,85 +92,123 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Glassmorphism utility helpers */
+/* ========================================================================= */
+/* IMMERSIVE CHROMIUM LIQUID GLASS & FROSTED PANELS                          */
+/* ========================================================================= */
+
 .glass-panel {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 32px 0 rgba(108, 89, 57, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(108, 89, 57, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 html.dark .glass-panel {
-  background: rgba(41, 42, 45, 0.8);
-  border: 1px solid rgba(60, 64, 67, 0.8);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  background: rgba(35, 37, 42, 0.65);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .glass-panel-subtle {
   background: rgba(246, 243, 238, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
   border: 1px solid rgba(207, 197, 184, 0.4);
 }
 
 html.dark .glass-panel-subtle {
-  background: rgba(32, 33, 36, 0.8);
-  border: 1px solid rgba(60, 64, 67, 0.6);
+  background: rgba(27, 28, 32, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
 }
 
 .glass-bottom-nav {
   background: rgba(252, 249, 244, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid rgba(207, 197, 184, 0.5);
   box-shadow: 0 -4px 24px -2px rgba(48, 48, 45, 0.06);
 }
 
 html.dark .glass-bottom-nav {
-  background: rgba(32, 33, 36, 0.9);
-  border-top: 1px solid rgba(60, 64, 67, 0.7);
-  box-shadow: 0 -4px 24px -2px rgba(0, 0, 0, 0.4);
+  background: rgba(24, 25, 28, 0.82);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* Dark mode overrides for common card backgrounds and borders */
+/* ========================================================================= */
+/* DARK THEME CHROMIUM GLASS OVERRIDES FOR CARDS & TILES                     */
+/* ========================================================================= */
+
+html.dark [class*="bg-white/90"],
+html.dark [class*="bg-white/95"],
+html.dark [class*="bg-white/80"],
 html.dark [class*="bg-white"] {
-  background-color: #292A2D !important;
+  background: rgba(35, 37, 42, 0.72) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 8px 28px -6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
   color: #E8EAED !important;
 }
 
 html.dark [class*="bg-[#FFFFFF]"] {
-  background-color: #292A2D !important;
+  background: rgba(35, 37, 42, 0.72) !important;
   color: #E8EAED !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
 }
 
 html.dark [class*="bg-[#FCF9F4]"] {
-  background-color: #202124 !important;
+  background-color: #18191C !important;
 }
 
 html.dark [class*="bg-[#F0EEE9]"] {
-  background-color: #35363A !important;
+  background: rgba(43, 45, 51, 0.7) !important;
   color: #E8EAED !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
 }
 
 html.dark [class*="bg-[#F6F3EE]"] {
-  background-color: #28292C !important;
+  background: rgba(32, 34, 38, 0.8) !important;
+  color: #E8EAED !important;
 }
 
 html.dark [class*="bg-[#FCFBF9]"] {
-  background-color: #1F2023 !important;
+  background: rgba(24, 25, 28, 0.9) !important;
 }
 
 html.dark [class*="bg-[#E7DFD1]"] {
-  background-color: #3C4043 !important;
-  color: #E8EAED !important;
+  background: rgba(59, 62, 69, 0.6) !important;
+  color: #8AB4F8 !important;
+  border-color: rgba(138, 180, 248, 0.2) !important;
+}
+
+/* Accent pills & highlight elements in Dark Mode */
+html.dark [class*="bg-[#6C5939]"] {
+  background-color: #3C5A8A !important;
+  color: #FFFFFF !important;
+}
+
+html.dark [class*="text-[#6C5939]"] {
+  color: #8AB4F8 !important;
+}
+
+html.dark [class*="text-[#86724F]"] {
+  color: #A8C7FA !important;
 }
 
 html.dark [class*="text-[#1B1C19]"] {
-  color: #E8EAED !important;
+  color: #F1F3F4 !important;
 }
 
 html.dark [class*="text-[#4C463C]"] {
@@ -181,25 +219,53 @@ html.dark [class*="text-[#7E766B]"] {
   color: #9AA0A6 !important;
 }
 
-html.dark [class*="text-[#86724F]"] {
-  color: #8AB4F8 !important;
-}
-
 html.dark [class*="border-[#CFC5B8]"] {
-  border-color: #3C4043 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 html.dark [class*="border-[#E7DFD1]"] {
-  border-color: #3C4043 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 html.dark [class*="border-[#DDD7CD]"] {
-  border-color: #4A4D51 !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
 }
 
+/* Specular ambient blobs in Dark Mode (turn to deep electric indigo & cyan aura) */
+html.dark [class*="bg-[#EAE1D4]"],
+html.dark [class*="bg-[#F9DFB5]"] {
+  background-color: rgba(66, 133, 244, 0.06) !important;
+}
+
+/* Inputs & Textareas */
 html.dark input,
-html.dark textarea {
-  background-color: #202124 !important;
-  color: #E8EAED !important;
-  border-color: #5F6368 !important;
+html.dark textarea,
+html.dark select {
+  background: rgba(24, 25, 28, 0.7) !important;
+  color: #F1F3F4 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark input:focus,
+html.dark textarea:focus {
+  border-color: #8AB4F8 !important;
+  box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.25) !important;
+}
+
+/* Green status banners in Dark Mode */
+html.dark [class*="bg-[#E7F5ED]"] {
+  background: rgba(26, 58, 40, 0.5) !important;
+  border-color: rgba(70, 167, 88, 0.3) !important;
+}
+
+/* Red alert banners in Dark Mode */
+html.dark [class*="bg-[#FFDAD6]"] {
+  background: rgba(78, 24, 24, 0.5) !important;
+  border-color: rgba(242, 139, 130, 0.3) !important;
+}
+
+html.dark [class*="text-[#BA1A1A]"],
+html.dark [class*="text-[#93000A]"] {
+  color: #F28B82 !important;
 }

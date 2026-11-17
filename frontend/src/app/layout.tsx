@@ -25,7 +25,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-[#FCF9F4] dark:bg-[#202124] text-[#1B1C19] dark:text-[#E8EAED] flex flex-col antialiased selection:bg-[#E7DFD1] selection:text-[#6C5939] transition-colors duration-200">
+      <body className="min-h-screen bg-[#FCF9F4] dark:bg-[#18191C] text-[#1B1C19] dark:text-[#E8EAED] flex flex-col antialiased selection:bg-[#E7DFD1] selection:text-[#6C5939] dark:selection:bg-[#3C5A8A] dark:selection:text-white transition-colors duration-300 relative">
+        {/* Specular Ambient Glows for Dark Mode */}
+        <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden dark:block hidden">
+          <div className="absolute top-0 left-1/4 w-[45rem] h-[30rem] rounded-full bg-[#1A73E8]/8 blur-[150px]" />
+          <div className="absolute top-1/2 right-1/4 w-[40rem] h-[25rem] rounded-full bg-[#8AB4F8]/6 blur-[140px]" />
+          <div className="absolute -bottom-10 left-1/3 w-[35rem] h-[25rem] rounded-full bg-[#1A73E8]/5 blur-[160px]" />
+        </div>
+
         <Providers>
           <TopHeader />
           <main className="flex-1 pb-28 pt-2">{children}</main>
