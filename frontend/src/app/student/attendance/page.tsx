@@ -205,7 +205,7 @@ export default function StudentAttendancePage() {
                               period: r.session?.slot?.period,
                               subjectCode: r.session?.slot?.subject?.code || item.subjectCode,
                             }))}
-                          totalDays={60}
+                          totalDays={item.total > 0 ? item.total : 45}
                           attendedCount={item.attended}
                         />
                       </div>
