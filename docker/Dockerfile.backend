@@ -1,0 +1,43 @@
+# Node alpine base
+FROM node:20-alpine AS base
+RUN npm install -g pnpm@10.5.2
+WORKDIR /app
+
+# Build stage
+FROM base AS builder
+WORKDIR /app
+
+# Copy package manifests
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy backend source
+COPY backend/ ./backend/
+WORKDIR /app/backend
+RUN npx prisma generate
+
+# Production runner stage
+FROM node:20-alpine AS runner
+RUN npm install -g pnpm@10.5.2
+WORKDIR /app/backend
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
+COPY backend/package.json /app/backend/
+
+# Install production dependencies only
+RUN cd /app && pnpm install --prod --frozen-lockfile
+
+COPY --from=builder /app/backend/node_modules/.prisma /app/backend/node_modules/.prisma
+COPY --from=builder /app/backend/node_modules/@prisma /app/backend/node_modules/@prisma
+COPY backend/ ./
+
+EXPOSE 3000
+
+CMD ["npx", "tsx", "src/server.ts"]

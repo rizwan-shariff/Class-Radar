@@ -53,6 +53,12 @@ The project is structured as a **pnpm workspaces monorepo**:
 Class-Radar/
 ├── backend/             # Backend Fastify API, Prisma ORM, Socket.IO & Redis
 ├── frontend/            # Frontend Next.js 14 (App Router), Tailwind CSS & PWA
+├── docker/              # Dedicated Docker containerization setup & Compose configs
+│   ├── Dockerfile.backend
+│   ├── Dockerfile.frontend
+│   ├── docker-compose.yml
+│   ├── .env.example
+│   └── README.md
 ├── templates/           # 17 Exported Google Stitch High-Fidelity Design Templates
 ├── openapi.yaml         # Single Source of Truth REST API Contract
 ├── SPEC.md              # Project Specifications & Feature Acceptance Criteria
