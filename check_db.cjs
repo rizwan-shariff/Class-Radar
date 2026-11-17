@@ -9,3 +9,4 @@ async function run() {
   console.log('Open sessions:', sessions);
 }
 run().then(() => prisma.$disconnect());
+

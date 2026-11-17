@@ -25,7 +25,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-[#FCF9F4] text-[#1B1C19] flex flex-col antialiased selection:bg-[#E7DFD1] selection:text-[#6C5939]">
+      <body className="min-h-screen bg-[#FCF9F4] dark:bg-[#202124] text-[#1B1C19] dark:text-[#E8EAED] flex flex-col antialiased selection:bg-[#E7DFD1] selection:text-[#6C5939] transition-colors duration-200">
         <Providers>
           <TopHeader />
           <main className="flex-1 pb-28 pt-2">{children}</main>

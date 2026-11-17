@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { api, User } from '@/lib/api';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Lock, Mail, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
@@ -62,6 +63,10 @@ export default function LoginPage() {
       <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-[#E5E2DD]/60 rounded-full blur-3xl pointer-events-none -z-10" />
 
       <div className="w-full max-w-md glass-panel rounded-3xl p-8 shadow-xl relative border border-[#CFC5B8]/60">
+        <div className="absolute top-6 right-6">
+          <ThemeToggle />
+        </div>
+
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#6C5939] to-[#86724F] text-white shadow-md shadow-[#6C5939]/20 mb-4">
             <Sparkles className="w-7 h-7" />

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { ThemeToggle } from './ThemeToggle';
 import {
   LogOut,
   Bell,
@@ -117,6 +118,9 @@ export function TopHeader() {
             <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
             <span>Curricular Week 8</span>
           </div>
+
+          {/* Dark / Light Theme Toggle Button */}
+          <ThemeToggle />
 
           <button
             className="relative p-2 rounded-xl text-[#4C463C] hover:bg-[#F0EEE9] transition"
