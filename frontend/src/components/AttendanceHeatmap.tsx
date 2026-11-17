@@ -3,18 +3,38 @@
 import React, { useState } from 'react';
 import { Clock } from 'lucide-react';
 
+export interface HeatmapRecord {
+  date: string | Date;
+  status: 'PRESENT' | 'ABSENT' | string;
+  period?: number;
+  periodSlot?: string;
+  timeRange?: string;
+  subjectCode?: string;
+}
+
 interface AttendanceHeatmapProps {
   studentName?: string;
+  records?: HeatmapRecord[];
   totalDays?: number;
   attendedCount?: number;
-  highlightDays?: number[]; // e.g. indices that are present
 }
+
+// Period timeslot schedules matching official college timetable
+const PERIOD_SLOTS: Record<number, string> = {
+  1: '09:00 - 10:00 AM',
+  2: '10:00 - 11:00 AM',
+  3: '11:30 - 12:30 PM',
+  4: '12:30 - 01:30 PM',
+  5: '02:30 - 03:30 PM',
+  6: '03:30 - 04:30 PM',
+  7: '04:30 - 05:00 PM',
+};
 
 export function AttendanceHeatmap({
   studentName,
+  records,
   totalDays = 60,
-  attendedCount = 48,
-  highlightDays,
+  attendedCount,
 }: AttendanceHeatmapProps) {
   const [hoveredBox, setHoveredBox] = useState<{
     dayIndex: number;
@@ -24,55 +44,76 @@ export function AttendanceHeatmap({
     weekday: string;
     periodSlot: string;
     timeRange: string;
+    subjectCode?: string;
     x: number;
     y: number;
   } | null>(null);
 
-  // Period timeslot schedules matching official college timetable
-  const PERIOD_SLOTS = [
-    { period: 1, range: '09:00 - 10:00 AM' },
-    { period: 2, range: '10:00 - 11:00 AM' },
-    { period: 3, range: '11:30 - 12:30 PM' },
-    { period: 4, range: '12:30 - 01:30 PM' },
-    { period: 5, range: '02:30 - 03:30 PM' },
-    { period: 6, range: '03:30 - 04:30 PM' },
-    { period: 7, range: '04:30 - 05:00 PM' },
-  ];
-
-  // Generate simulated 60-day calendar boxes
+  // Generate 60-day calendar boxes directly hydrated by real records when supplied
   const boxes = React.useMemo(() => {
     const list = [];
     const seed = (studentName || 'seed').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
     
+    // Group real records by formatted date (e.g. YYYY-MM-DD)
+    const recordsByDay = new Map<string, HeatmapRecord[]>();
+    if (records && records.length > 0) {
+      for (const rec of records) {
+        const d = new Date(rec.date);
+        if (!isNaN(d.getTime())) {
+          const key = d.toISOString().split('T')[0]!;
+          const existing = recordsByDay.get(key) || [];
+          existing.push(rec);
+          recordsByDay.set(key, existing);
+        }
+      }
+    }
+
+    const hasRealRecords = recordsByDay.size > 0;
+    const baseDate = new Date(2026, 8, 1); // Start Sept 1, 2026
+
     for (let i = 0; i < totalDays; i++) {
+      const curDate = new Date(baseDate);
+      curDate.setDate(baseDate.getDate() + i);
+      const isoKey = curDate.toISOString().split('T')[0]!;
+      const dayMatches = recordsByDay.get(isoKey);
+
       let isPresent = false;
-      if (highlightDays && highlightDays.length > 0) {
-        isPresent = highlightDays.includes(i);
+      let periodNum = ((seed + i) % 7) + 1;
+      let subjectCode: string | undefined = undefined;
+
+      if (hasRealRecords) {
+        if (dayMatches && dayMatches.length > 0) {
+          const verified = dayMatches.find((m) => m.status === 'PRESENT') || dayMatches[0]!;
+          isPresent = verified.status === 'PRESENT';
+          if (verified.period) periodNum = verified.period;
+          if (verified.subjectCode) subjectCode = verified.subjectCode;
+        } else {
+          // Weekend or no recorded session
+          isPresent = false;
+        }
       } else {
+        // Fallback simulation when no live database records exist yet
         const val = ((seed * (i + 13) * 31) % 100);
         const isClassDay = (i % 7) !== 0 && (i % 7) !== 6;
-        isPresent = isClassDay && (val < (attendedCount / totalDays) * 115);
+        const targetRatio = attendedCount ? attendedCount / totalDays : 0.8;
+        isPresent = isClassDay && (val < targetRatio * 115);
       }
-      
-      const date = new Date(2026, 8, 1); // Start Sept 1, 2026
-      date.setDate(date.getDate() + i);
 
-      // Map a consistent period slot
-      const slotIndex = ((seed + i) % PERIOD_SLOTS.length);
-      const slot = PERIOD_SLOTS[slotIndex]!;
+      const timeRange = PERIOD_SLOTS[periodNum] || '09:00 - 10:00 AM';
 
       list.push({
         dayIndex: i,
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        fullDate: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
-        weekday: date.toLocaleDateString('en-US', { weekday: 'long' }),
-        periodSlot: `Period ${slot.period}`,
-        timeRange: slot.range,
+        date: curDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        fullDate: curDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+        weekday: curDate.toLocaleDateString('en-US', { weekday: 'long' }),
+        periodSlot: `Period ${periodNum}`,
+        timeRange,
+        subjectCode,
         isPresent,
       });
     }
     return list;
-  }, [studentName, totalDays, attendedCount, highlightDays]);
+  }, [studentName, records, totalDays, attendedCount]);
 
   const presentTotal = boxes.filter((b) => b.isPresent).length;
   const attendanceRate = Math.round((presentTotal / totalDays) * 100);
@@ -127,7 +168,7 @@ export function AttendanceHeatmap({
           })}
         </div>
 
-        {/* LeetCode / GitHub Style Floating Interactive Tooltip Bubble */}
+        {/* Floating Interactive Tooltip Bubble */}
         {hoveredBox && (
           <div
             className="absolute z-30 pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 transition-all duration-150 ease-out animate-in fade-in zoom-in-95"
@@ -160,7 +201,7 @@ export function AttendanceHeatmap({
               </div>
 
               <div className="text-[10px] text-[#9CA3AF]">
-                {hoveredBox.periodSlot}
+                {hoveredBox.periodSlot} {hoveredBox.subjectCode ? `· ${hoveredBox.subjectCode}` : ''}
               </div>
 
               {/* Tooltip caret arrow pointing down */}

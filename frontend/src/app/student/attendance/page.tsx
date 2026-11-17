@@ -28,6 +28,11 @@ export default function StudentAttendancePage() {
     queryFn: () => api.attendance.summary(),
   });
 
+  const { data: attendanceHistory } = useQuery({
+    queryKey: ['student-attendance-history'],
+    queryFn: () => api.attendance.studentHistory(),
+  });
+
   const overallAvg = summary && summary.length > 0
     ? Math.round(summary.reduce((acc, c) => acc + c.percent, 0) / summary.length)
     : 84;
@@ -187,13 +192,21 @@ export default function StudentAttendancePage() {
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
 
-                    {/* LeetCode / GitHub style Heatmap Box Matrix */}
+                    {/* LeetCode / GitHub style Heatmap Box Matrix Hydrated with Real API Records */}
                     {isExpanded && (
                       <div className="pt-2 border-t border-[#CFC5B8]/30 animate-in fade-in duration-200">
                         <AttendanceHeatmap
                           studentName={item.subjectCode}
+                          records={(attendanceHistory || [])
+                            .filter((r: any) => !r.session?.slot?.subjectId || r.session?.slot?.subjectId === item.subjectId)
+                            .map((r: any) => ({
+                              date: r.markedAt,
+                              status: r.status,
+                              period: r.session?.slot?.period,
+                              subjectCode: r.session?.slot?.subject?.code || item.subjectCode,
+                            }))}
                           totalDays={60}
-                          attendedCount={item.attended * 2}
+                          attendedCount={item.attended}
                         />
                       </div>
                     )}

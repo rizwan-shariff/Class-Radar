@@ -359,7 +359,7 @@ export default function FacultyDashboardPage() {
                     </div>
                   </div>
 
-                  {/* LeetCode / GitHub Style Box Heatmap for Individual Student */}
+                  {/* LeetCode / GitHub Style Box Heatmap for Individual Student Hydrated with Real API Records */}
                   {isExpanded && (
                     <div className="pt-3 border-t border-[#CFC5B8]/40 animate-in fade-in duration-200">
                       <div className="mb-2 text-xs font-semibold text-[#4C463C]">
@@ -367,8 +367,9 @@ export default function FacultyDashboardPage() {
                       </div>
                       <AttendanceHeatmap
                         studentName={st.studentName}
+                        records={st.records || []}
                         totalDays={60}
-                        attendedCount={st.attended * 2}
+                        attendedCount={st.attended}
                       />
                     </div>
                   )}
