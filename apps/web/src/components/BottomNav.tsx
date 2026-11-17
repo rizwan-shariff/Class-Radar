@@ -47,7 +47,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex justify-center pb-4 px-4">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 pointer-events-none flex justify-center pb-4 px-4">
       <div className="pointer-events-auto flex items-center justify-around gap-1 max-w-md w-full glass-bottom-nav rounded-3xl py-2 px-3 transition-all duration-200">
         {items.map((item) => {
           const isActive = pathname === item.href;
@@ -70,4 +70,3 @@ export function BottomNav() {
     </nav>
   );
 }
-

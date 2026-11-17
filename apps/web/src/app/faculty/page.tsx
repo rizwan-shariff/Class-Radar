@@ -3,7 +3,22 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, Slot } from '@/lib/api';
-import { Calendar, Clock, MapPin, QrCode, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  QrCode,
+  AlertOctagon,
+  CheckCircle2,
+  Users,
+  Search,
+  ArrowRight,
+  Sparkles,
+  Info,
+  ShieldCheck,
+  Check,
+  X
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function FacultyDashboardPage() {
@@ -50,164 +65,298 @@ export default function FacultyDashboardPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-4 space-y-6">
-      {/* Header */}
-      <div className="glass-panel rounded-3xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
-              Faculty Hub
-            </span>
-            <h2 className="text-xl font-bold text-[#1B1C19] mt-0.5">Teaching Schedule</h2>
-          </div>
-          <button
-            onClick={() => setMarkAbsentOpen(true)}
-            className="py-1.5 px-3 rounded-2xl bg-[#FFDAD6] text-[#BA1A1A] hover:bg-[#ffcdc7] text-xs font-bold flex items-center gap-1.5 transition"
-          >
-            <AlertOctagon className="w-3.5 h-3.5" />
-            <span>Mark Absent</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-[#FFFFFF]/80 border border-[#CFC5B8]/80 py-1.5 px-3 rounded-2xl text-xs font-medium text-[#4C463C] w-fit">
-          <Calendar className="w-3.5 h-3.5" />
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent focus:outline-none text-xs"
-          />
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      {/* Specular Ambient Glows */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute -top-32 left-1/4 w-[580px] h-[340px] rounded-full bg-[#F9DFB5]/25 blur-[110px]" />
+        <div className="absolute -top-20 right-10 w-[420px] h-[280px] rounded-full bg-[#EAE1D4]/40 blur-[90px]" />
       </div>
 
-      {/* Teaching Slots */}
-      <div className="space-y-3.5">
+      {/* Editorial Header Section */}
+      <section className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-b border-[#CFC5B8]/40 pb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#86724F]">
+              Faculty Central Operations · Autumn Term
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B1C19] tracking-tight">
+            Teaching Cadence & Overview
+          </h1>
+          <p className="text-xs sm:text-sm text-[#4C463C]">
+            Science & Engineering Complex / Department of Computer Science & Engineering
+          </p>
+        </div>
+
+        {/* Right Metric Pills & Controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-white/80 border border-[#CFC5B8]/70 py-1.5 px-3.5 rounded-2xl text-xs font-medium text-[#4C463C] shadow-sm">
+            <Calendar className="w-4 h-4 text-[#86724F]" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-transparent focus:outline-none text-xs font-semibold text-[#1B1C19] cursor-pointer"
+            />
+          </div>
+
+          <div className="px-4 py-2 rounded-full bg-[#F0EEE9] border border-white/80 shadow-sm flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#6C5939]" />
+            <span className="text-xs font-bold text-[#1B1C19]">
+              {slots?.length || 0} Teaching Sessions
+            </span>
+          </div>
+
+          <button
+            onClick={() => setMarkAbsentOpen(true)}
+            className="py-2 px-4 rounded-full bg-[#FFDAD6] text-[#BA1A1A] hover:bg-[#ffcdc7] text-xs font-bold flex items-center gap-1.5 transition shadow-sm active:scale-95"
+          >
+            <AlertOctagon className="w-4 h-4" />
+            <span>Mark Me Absent</span>
+          </button>
+        </div>
+      </section>
+
+      {/* Quick Faculty Action Cards: Asymmetric Liquid Glass Cards */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Card 1: Mark Me Absent Quick Card */}
+        <div
+          onClick={() => setMarkAbsentOpen(true)}
+          className="group cursor-pointer rounded-3xl bg-white/80 hover:bg-white/95 backdrop-blur-xl p-6 shadow-sm hover:shadow-md border border-[#CFC5B8]/50 transition-all duration-300 relative overflow-hidden flex items-center justify-between"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#FFDAD6]/70 text-[#BA1A1A] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <AlertOctagon className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-[#1B1C19]">Report Absence</h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FFDAD6] text-[#93000A]">
+                  Auto-Substitute
+                </span>
+              </div>
+              <p className="text-xs text-[#4C463C] max-w-sm">
+                Report sudden unavailability and instantly trigger zero-clash substitute allocation for your students.
+              </p>
+            </div>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-[#F0EEE9] flex items-center justify-center text-[#4C463C] group-hover:bg-[#6C5939] group-hover:text-white transition-all shrink-0">
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </div>
+
+        {/* Card 2: Find Free Room Quick Card */}
+        <Link
+          href="/rooms"
+          className="group cursor-pointer rounded-3xl bg-white/80 hover:bg-white/95 backdrop-blur-xl p-6 shadow-sm hover:shadow-md border border-[#CFC5B8]/50 transition-all duration-300 relative overflow-hidden flex items-center justify-between"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Search className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-[#1B1C19]">Find Free Room</h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E7DFD1] text-[#6C5939]">
+                  Instant Radar
+                </span>
+              </div>
+              <p className="text-xs text-[#4C463C] max-w-sm">
+                Locate unallocated seminar auditoriums, lecture rooms, and labs for unscheduled reviews or lab setups.
+              </p>
+            </div>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-[#F0EEE9] flex items-center justify-center text-[#4C463C] group-hover:bg-[#6C5939] group-hover:text-white transition-all shrink-0">
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </Link>
+      </section>
+
+      {/* Teaching Cadence List */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#86724F]" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F]">
+              Today's Teaching Schedule
+            </h2>
+          </div>
+          <span className="text-xs font-semibold text-[#7E766B]">
+            Automated Attendance Beacons Synchronized
+          </span>
+        </div>
+
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-3xl bg-[#F0EEE9]/70 animate-pulse" />
+              <div key={i} className="h-32 rounded-3xl bg-[#F0EEE9]/70 animate-pulse border border-[#CFC5B8]/40" />
             ))}
           </div>
         ) : !slots || slots.length === 0 ? (
-          <div className="glass-panel p-8 rounded-3xl text-center text-xs text-[#7E766B]">
-            No teaching slots scheduled for this date.
+          <div className="glass-panel p-10 rounded-3xl text-center space-y-3 border border-[#CFC5B8]/50">
+            <div className="w-14 h-14 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <p className="text-base font-bold text-[#1B1C19]">No Lectures Scheduled Today</p>
+            <p className="text-xs text-[#7E766B] max-w-sm mx-auto">
+              You have no active teaching slots assigned for this date.
+            </p>
           </div>
         ) : (
-          slots.map((slot) => (
-            <div
-              key={slot.id}
-              className="glass-panel rounded-3xl p-5 border border-[#CFC5B8]/50 space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#86724F]/10 text-[#6C5939]">
-                  Period {slot.period}
-                </span>
-                <span className="text-xs font-medium text-[#7E766B] flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> {slot.roomName || 'Classroom'}
-                </span>
-              </div>
+          slots.map((slot, index) => {
+            const isSub = slot.isSubstituted;
+            const isCanc = slot.isCancelled;
 
+            return (
+              <article
+                key={slot.id || index}
+                className="group rounded-3xl bg-white/90 backdrop-blur-xl p-6 sm:p-7 shadow-sm hover:shadow-md border border-[#CFC5B8]/50 transition-all duration-300 relative overflow-hidden"
+              >
+                <div className="absolute inset-y-0 left-0 w-1.5 bg-[#6C5939]" />
+
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pl-2">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+                    {/* Time Rail */}
+                    <div className="sm:w-36 flex-shrink-0 flex sm:flex-col items-start justify-between">
+                      <span className="text-xl sm:text-2xl font-bold text-[#1B1C19] tracking-tight">
+                        Period {slot.period}
+                      </span>
+                      <span className="text-xs font-medium text-[#7E766B] mt-0.5">
+                        Slot #{slot.period} (50 mins)
+                      </span>
+                      <span className="mt-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-[#F0EEE9] text-[#6C5939]">
+                        Section A
+                      </span>
+                    </div>
+
+                    {/* Class Info */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[#F0EEE9] text-[#1B1C19]">
+                          {slot.subjectCode || 'Course'}
+                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E7DFD1] text-[#6C5939] text-[10px] font-bold uppercase">
+                          {isSub ? 'Assigned to Substitute' : 'Instructor In-Charge'}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg sm:text-xl font-bold text-[#1B1C19] tracking-tight">
+                        {slot.subjectName || 'Subject Title'}
+                      </h3>
+
+                      <div className="flex items-center gap-5 flex-wrap text-xs text-[#4C463C] pt-1">
+                        <div className="flex items-center gap-1.5 font-semibold text-[#1B1C19]">
+                          <MapPin className="w-4 h-4 text-[#86724F]" />
+                          <span>{slot.roomName || 'Assigned Room'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-medium text-[#7E766B]">
+                          <Users className="w-4 h-4 text-[#86724F]" />
+                          <span>Enrolled: 60 Students</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Actions: Launch QR Attendance Session */}
+                  <div className="flex items-center gap-3 pt-2 lg:pt-0">
+                    <Link
+                      href={`/faculty/session?slotId=${slot.id || 'slot-1'}`}
+                      className="px-5 py-2.5 rounded-full bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold flex items-center gap-2 transition shadow-sm active:scale-95"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      <span>Launch QR Attendance Screen</span>
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </section>
+
+      {/* Liquid Glass Modal: Mark Me Absent */}
+      {markAbsentOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#FCF9F4] border border-[#CFC5B8]/80 p-7 shadow-2xl space-y-5">
+            <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-base font-bold text-[#1B1C19]">
-                  {slot.subjectCode || 'Course'} — {slot.subjectName || 'Subject Title'}
+                <span className="text-[10px] font-bold text-[#86724F] uppercase tracking-wider">
+                  Faculty Absence Dispatch
+                </span>
+                <h3 className="text-lg font-bold text-[#1B1C19] mt-0.5">
+                  Report Unavailability
                 </h3>
               </div>
-
-              <div className="pt-2 border-t border-[#CFC5B8]/40 flex items-center justify-between">
-                <span className="text-xs text-[#7E766B]">
-                  Section: <strong className="text-[#1B1C19]">{slot.sectionId || 'A'}</strong>
-                </span>
-                <Link
-                  href={`/faculty/session?slotId=${slot.id}`}
-                  className="py-1.5 px-3 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>Launch QR Session</span>
-                </Link>
-              </div>
+              <button
+                onClick={() => setMarkAbsentOpen(false)}
+                className="w-8 h-8 rounded-full bg-[#F0EEE9] flex items-center justify-center text-[#4C463C] hover:bg-[#E5E2DD] transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          ))
-        )}
-      </div>
 
-      {/* Mark Me Absent Drawer */}
-      {markAbsentOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-          <div className="w-full max-w-sm glass-panel bg-[#FCF9F4] rounded-3xl p-6 shadow-2xl border border-[#CFC5B8] animate-in slide-in-from-bottom-6 duration-200">
             {absentSuccess ? (
-              <div className="text-center py-6 space-y-2">
-                <CheckCircle2 className="w-12 h-12 text-[#6C5939] mx-auto" />
-                <h3 className="text-base font-bold text-[#1B1C19]">Absence Reported</h3>
+              <div className="py-8 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
+                  <Check className="w-8 h-8" />
+                </div>
+                <h4 className="text-base font-bold text-[#1B1C19]">Absence Submitted</h4>
                 <p className="text-xs text-[#7E766B]">
-                  The administration was notified and substitute suggestions have been compiled.
+                  Your request has been recorded. Substitutes have been dispatched for the selected periods.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmitAbsence} className="space-y-4">
                 <div>
-                  <span className="text-[10px] font-bold text-[#BA1A1A] uppercase tracking-wider">
-                    Staff Leave Request
-                  </span>
-                  <h3 className="text-base font-bold text-[#1B1C19] mt-0.5">
-                    Mark Absence on {selectedDate}
-                  </h3>
-                  <p className="text-xs text-[#7E766B] mt-1">
-                    Select the periods you will be unavailable.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#4C463C] mb-2">
-                    Periods to Skip
+                  <label className="block text-xs font-semibold text-[#4C463C] mb-1">
+                    Select Periods to Relieve:
                   </label>
                   <div className="grid grid-cols-4 gap-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((period) => {
-                      const isSelected = absentPeriods.includes(period);
-                      return (
-                        <button
-                          key={period}
-                          type="button"
-                          onClick={() => handleTogglePeriod(period)}
-                          className={`py-2 text-xs font-bold rounded-xl border transition ${
-                            isSelected
-                              ? 'bg-[#BA1A1A] text-white border-[#BA1A1A]'
-                              : 'bg-[#FFFFFF] text-[#4C463C] border-[#CFC5B8]'
-                          }`}
-                        >
-                          P{period}
-                        </button>
-                      );
-                    })}
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((period) => (
+                      <button
+                        type="button"
+                        key={period}
+                        onClick={() => handleTogglePeriod(period)}
+                        className={`py-2 text-xs font-bold rounded-xl border transition ${
+                          absentPeriods.includes(period)
+                            ? 'bg-[#6C5939] text-white border-[#6C5939]'
+                            : 'bg-white text-[#4C463C] border-[#CFC5B8]/70 hover:bg-[#F0EEE9]'
+                        }`}
+                      >
+                        Period {period}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-[#4C463C] mb-1">
-                    Reason (Optional)
+                    Reason (Optional note for Dean / HOD):
                   </label>
                   <input
                     type="text"
                     value={absentReason}
                     onChange={(e) => setAbsentReason(e.target.value)}
-                    placeholder="e.g. Medical leave, University conference"
-                    className="w-full py-2.5 px-3 rounded-2xl bg-[#FFFFFF] border border-[#CFC5B8] text-xs text-[#1B1C19] focus:outline-none"
+                    placeholder="e.g. Academic Symposium, sudden sickness..."
+                    className="w-full py-2.5 px-3 rounded-xl bg-white border border-[#CFC5B8] text-xs text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30"
                   />
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setMarkAbsentOpen(false)}
-                    className="flex-1 py-2 px-3 rounded-2xl bg-[#F0EEE9] text-[#4C463C] text-xs font-semibold hover:bg-[#E5E2DD]"
+                    className="py-2 px-4 rounded-xl text-xs font-semibold text-[#4C463C] hover:bg-[#F0EEE9]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={absentPeriods.length === 0}
-                    className="flex-1 py-2 px-3 rounded-2xl bg-[#BA1A1A] hover:bg-[#93000a] text-white text-xs font-semibold disabled:opacity-50"
+                    className="py-2 px-5 rounded-xl bg-[#BA1A1A] hover:bg-[#93000a] text-white text-xs font-bold transition disabled:opacity-50"
                   >
-                    Confirm Absence
+                    Submit Absence & Request Coverage
                   </button>
                 </div>
               </form>

@@ -3,15 +3,23 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, Slot } from '@/lib/api';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  BookOpen,
+  ChevronRight,
+  ShieldCheck
+} from 'lucide-react';
 
 const WEEKDAYS = [
-  { id: 1, label: 'Mon' },
-  { id: 2, label: 'Tue' },
-  { id: 3, label: 'Wed' },
-  { id: 4, label: 'Thu' },
-  { id: 5, label: 'Fri' },
-  { id: 6, label: 'Sat' },
+  { id: 1, label: 'Monday', short: 'Mon' },
+  { id: 2, label: 'Tuesday', short: 'Tue' },
+  { id: 3, label: 'Wednesday', short: 'Wed' },
+  { id: 4, label: 'Thursday', short: 'Thu' },
+  { id: 5, label: 'Friday', short: 'Fri' },
+  { id: 6, label: 'Saturday', short: 'Sat' },
 ];
 
 export default function StudentTimetablePage() {
@@ -26,73 +34,115 @@ export default function StudentTimetablePage() {
   const daySlots = allSlots?.filter((s) => s.weekday === selectedDay) || [];
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-4 space-y-6">
-      {/* Header */}
-      <div className="glass-panel rounded-3xl p-6">
-        <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
-          Weekly Matrix
-        </span>
-        <h2 className="text-xl font-bold text-[#1B1C19] mt-0.5">Academic Timetable</h2>
-        <p className="text-xs text-[#4C463C] mt-1">
-          Standard Monday to Saturday 8-period institutional schedule.
-        </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      {/* Specular Ambient Glows */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-10 left-1/4 w-[40rem] h-[25rem] rounded-full bg-[#EAE1D4]/40 blur-[120px]" />
+      </div>
 
-        {/* Day Selector Tabs */}
-        <div className="grid grid-cols-6 gap-1.5 mt-5 bg-[#FFFFFF]/60 p-1.5 rounded-2xl border border-[#CFC5B8]/40">
+      {/* Editorial Header Section */}
+      <section className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-b border-[#CFC5B8]/40 pb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#86724F]">
+              Academic Weekly Matrix · Curricular Autumn Term
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B1C19] tracking-tight">
+            Comprehensive Timetable Schedule
+          </h1>
+          <p className="text-xs sm:text-sm text-[#4C463C]">
+            Standard Monday to Saturday 8-period institutional schedule with real-time room assignments.
+          </p>
+        </div>
+
+        {/* Day Selector Pills for Laptop */}
+        <div className="flex items-center gap-1.5 bg-[#FFFFFF]/80 p-1.5 rounded-2xl border border-[#CFC5B8]/60 shadow-sm">
           {WEEKDAYS.map((day) => (
             <button
               key={day.id}
               onClick={() => setSelectedDay(day.id)}
-              className={`py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all ${
                 selectedDay === day.id
-                  ? 'bg-[#6C5939] text-white shadow-sm'
+                  ? 'bg-[#6C5939] text-white shadow-sm scale-105'
                   : 'text-[#4C463C] hover:bg-black/5'
               }`}
             >
-              {day.label}
+              <span className="hidden sm:inline">{day.label}</span>
+              <span className="sm:hidden">{day.short}</span>
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Slots for selected day */}
-      <div className="space-y-3">
+      {/* Daily Schedule Cards */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#86724F]" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F]">
+              {WEEKDAYS.find((d) => d.id === selectedDay)?.label} Classes
+            </h2>
+          </div>
+          <span className="text-xs font-semibold text-[#7E766B]">
+            {daySlots.length} Periods Scheduled
+          </span>
+        </div>
+
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 rounded-3xl bg-[#F0EEE9]/70 animate-pulse" />
+              <div key={i} className="h-28 rounded-3xl bg-[#F0EEE9]/70 animate-pulse border border-[#CFC5B8]/40" />
             ))}
           </div>
         ) : daySlots.length === 0 ? (
-          <div className="glass-panel rounded-3xl p-8 text-center text-xs text-[#7E766B]">
-            No lecture periods configured for this day.
+          <div className="glass-panel p-12 rounded-3xl text-center space-y-3 border border-[#CFC5B8]/50">
+            <BookOpen className="w-10 h-10 text-[#6C5939] mx-auto opacity-70" />
+            <h3 className="text-base font-bold text-[#1B1C19]">No Classes Scheduled for This Day</h3>
+            <p className="text-xs text-[#7E766B]">
+              Enjoy your study break or visit the campus library.
+            </p>
           </div>
         ) : (
-          daySlots.map((slot) => (
-            <div
-              key={slot.id}
-              className="glass-panel rounded-3xl p-4 border border-[#CFC5B8]/50 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-[#E7DFD1] text-[#6C5939] font-bold text-xs flex items-center justify-center shrink-0">
-                  P{slot.period}
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#1B1C19]">
-                    {slot.subjectCode || 'Subject'}
-                  </h4>
-                  <p className="text-xs text-[#4C463C]">{slot.facultyName || 'Faculty'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {daySlots.map((slot, index) => (
+              <div
+                key={slot.id || index}
+                className="group rounded-3xl bg-white/90 backdrop-blur-xl p-6 shadow-sm hover:shadow-md border border-[#CFC5B8]/60 transition-all duration-200 flex flex-col justify-between space-y-4 relative overflow-hidden"
+              >
+                <div className="absolute inset-y-0 left-0 w-1.5 bg-[#6C5939]" />
+
+                <div className="space-y-2 pl-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E7DFD1] text-[#6C5939]">
+                      Period {slot.period}
+                    </span>
+                    <span className="text-xs font-semibold text-[#7E766B]">
+                      50 mins
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-bold text-[#1B1C19]">
+                    {slot.subjectCode} — {slot.subjectName}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-xs text-[#4C463C] pt-1">
+                    <span className="flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-[#86724F]" />
+                      <span>{slot.facultyName || 'Faculty Instructor'}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 font-semibold text-[#1B1C19]">
+                      <MapPin className="w-3.5 h-3.5 text-[#86724F]" />
+                      <span>{slot.roomName || 'Room 101'}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-xl bg-[#FFFFFF] border border-[#CFC5B8]/60 text-[#1B1C19]">
-                  {slot.roomName || 'Room'}
-                </span>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

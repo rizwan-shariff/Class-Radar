@@ -1,9 +1,24 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
-import { QrCode, CheckCircle, AlertCircle, Camera, KeyRound, StopCircle } from 'lucide-react';
+import {
+  QrCode,
+  CheckCircle,
+  AlertCircle,
+  Camera,
+  KeyRound,
+  StopCircle,
+  Smartphone,
+  Laptop,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+  Info
+} from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function StudentScanPage() {
   const [manualToken, setManualToken] = useState('');
@@ -11,6 +26,14 @@ export default function StudentScanPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+
+  const [mobileUrl, setMobileUrl] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setMobileUrl(window.location.href);
+    }
+  }, []);
 
   const submitToken = async (tokenToSubmit: string) => {
     if (!tokenToSubmit.trim()) return;
@@ -55,12 +78,10 @@ export default function StudentScanPage() {
       const html5QrCode = new Html5Qrcode('qr-reader-container');
       scannerRef.current = html5QrCode;
 
-      // html5-qrcode expects a string "environment" or "user", or an object with { exact: "..." }
       let cameraConfig: any = "environment";
       try {
         const cameras = await Html5Qrcode.getCameras();
         if (cameras && cameras.length > 0) {
-          // If multiple cameras exist, choose back camera if label matches, otherwise first camera
           const backCam = cameras.find((c) =>
             c.label.toLowerCase().includes("back") || c.label.toLowerCase().includes("rear") || c.label.toLowerCase().includes("environment")
           );
@@ -94,7 +115,7 @@ export default function StudentScanPage() {
       setMessage(
         err?.message?.includes('Permission')
           ? 'Camera permission denied. Please allow camera access in your browser bar.'
-          : 'Unable to open camera stream. If using laptop/desktop, verify your webcam is connected or use manual entry below.'
+          : 'Unable to open camera stream. If on mobile, please check camera permissions.'
       );
       setStatus('error');
     }
@@ -133,125 +154,330 @@ export default function StudentScanPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-4 space-y-6">
-      {/* Header */}
-      <div className="glass-panel rounded-3xl p-6 text-center">
-        <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
-          Anti-Proxy Verification
-        </span>
-        <h2 className="text-xl font-bold text-[#1B1C19] mt-0.5">Scan Lecture QR</h2>
-        <p className="text-xs text-[#4C463C] mt-1 max-w-xs mx-auto">
-          Scan the rotating cryptographic token displayed on your instructor's screen.
-        </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      {/* Specular Ambient Glows */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-20 right-1/4 w-[32rem] h-[32rem] rounded-full bg-[#EAE1D4]/40 blur-[120px]" />
+        <div className="absolute bottom-20 left-1/4 w-[30rem] h-[30rem] rounded-full bg-[#F9DFB5]/20 blur-[110px]" />
       </div>
 
-      {/* Visual Scanner Frame */}
-      <div className="glass-panel rounded-3xl p-6 border border-[#CFC5B8]/60 flex flex-col items-center justify-center relative overflow-hidden min-h-[340px]">
-        {status === 'success' ? (
-          <div className="text-center space-y-3 animate-in zoom-in-95 duration-200 py-6">
-            <div className="w-16 h-16 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
-              <CheckCircle className="w-9 h-9" />
-            </div>
-            <h3 className="text-base font-bold text-[#1B1C19]">Attendance Recorded!</h3>
-            <p className="text-xs text-[#4C463C] max-w-xs mx-auto">{message}</p>
-            <button
-              onClick={() => {
-                setStatus('idle');
-                setMessage(null);
-                setManualToken('');
-              }}
-              className="py-2 px-5 rounded-2xl bg-[#6C5939] text-white text-xs font-semibold hover:bg-[#554425] transition"
-            >
-              Done / Scan Again
-            </button>
+      {/* Hero Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#CFC5B8]/40 pb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
+            <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
+              Cryptographic Anti-Proxy Verification
+            </span>
           </div>
-        ) : status === 'error' ? (
-          <div className="text-center space-y-3 animate-in zoom-in-95 duration-200 py-6">
-            <div className="w-16 h-16 rounded-full bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center mx-auto">
-              <AlertCircle className="w-9 h-9" />
-            </div>
-            <h3 className="text-base font-bold text-[#BA1A1A]">Scan Notice</h3>
-            <p className="text-xs text-[#93000A] max-w-xs mx-auto">{message}</p>
-            <button
-              onClick={() => {
-                setStatus('idle');
-                setMessage(null);
-              }}
-              className="py-2 px-5 rounded-2xl bg-[#F0EEE9] text-[#1B1C19] text-xs font-semibold hover:bg-[#E5E2DD] transition"
-            >
-              Dismiss
-            </button>
-          </div>
-        ) : (
-          <div className="w-full flex flex-col items-center">
-            {/* HTML5 QR Code Mount container */}
-            <div
-              id="qr-reader-container"
-              className={`w-full max-w-[320px] aspect-square rounded-2xl overflow-hidden border-2 border-[#6C5939]/40 bg-black shadow-lg ${
-                isCameraActive ? 'block' : 'hidden'
-              }`}
-            />
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B1C19] tracking-tight">
+            Lecture Attendance Verification
+          </h1>
+          <p className="text-sm text-[#4C463C] mt-1 max-w-2xl">
+            Scan the dynamic 10-second rotating cryptographic session token displayed on your instructor's podium screen.
+          </p>
+        </div>
 
-            {!isCameraActive && (
-              <div className="w-64 h-64 rounded-3xl border-2 border-dashed border-[#6C5939]/60 relative flex flex-col items-center justify-center bg-[#F6F3EE]/60 p-4 text-center">
-                <QrCode className="w-14 h-14 text-[#6C5939] opacity-70 mb-3" />
-                <p className="text-xs font-semibold text-[#1B1C19]">Live Camera Feed</p>
-                <p className="text-[11px] text-[#7E766B] mt-1 mb-4">
-                  Tap below to start your webcam or mobile camera
+        <div className="flex items-center gap-3">
+          <Link
+            href="/student/attendance"
+            className="px-4 py-2 rounded-full bg-[#F0EEE9] hover:bg-[#E5E2DD] text-xs font-semibold text-[#1B1C19] transition-all flex items-center gap-1.5"
+          >
+            <ShieldCheck className="w-4 h-4 text-[#6C5939]" />
+            <span>View Attendance Stats</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* DESKTOP / LAPTOP PRESENTATION (hidden md:grid) */}
+      {/* ========================================================================= */}
+      <div className="hidden md:grid grid-cols-12 gap-8 items-start">
+        {/* Left Column: Dedicated Mobile Pairing & Instructions (Span 7) */}
+        <div className="col-span-7 space-y-6">
+          <div className="glass-panel rounded-3xl p-8 border border-[#CFC5B8]/60 relative overflow-hidden shadow-lg">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-[#F9DFB5]/20 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center font-bold shadow-sm">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#86724F]">
+                  Laptop Interface Mode
+                </span>
+                <h3 className="text-xl font-bold text-[#1B1C19]">
+                  Camera Scanner is Optimized for Mobile
+                </h3>
+              </div>
+            </div>
+
+            <p className="text-sm text-[#4C463C] leading-relaxed mb-6">
+              To prevent accidental proxy check-ins and maintain strict optical angle verification with the instructor's rotating QR token, <strong>live camera scanning is designated for handheld mobile devices</strong>.
+            </p>
+
+            <div className="bg-[#FFFFFF]/90 rounded-2xl p-6 border border-[#CFC5B8]/50 flex flex-col sm:flex-row items-center gap-6 shadow-sm">
+              <div className="p-3 bg-white rounded-2xl border border-[#CFC5B8]/60 shadow-inner shrink-0">
+                <QRCodeSVG
+                  value={mobileUrl || 'https://classradar.app/student/scan'}
+                  size={140}
+                  level="M"
+                  includeMargin={false}
+                />
+              </div>
+
+              <div className="space-y-2 text-center sm:text-left">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E7DFD1] text-[#6C5939] text-[11px] font-bold uppercase">
+                  <Sparkles className="w-3 h-3" />
+                  Instant Mobile Switch
+                </div>
+                <h4 className="text-base font-bold text-[#1B1C19]">
+                  Open on your Phone
+                </h4>
+                <p className="text-xs text-[#7E766B] leading-normal">
+                  Point your smartphone camera at this QR code to seamlessly continue your session on mobile and launch the live camera scanner.
                 </p>
+                <div className="pt-1">
+                  <span className="text-[11px] font-mono text-[#86724F] bg-[#F6F3EE] px-2 py-1 rounded-md border border-[#CFC5B8]/40">
+                    classradar.app/student/scan
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step-by-step guidance */}
+            <div className="mt-8 grid grid-cols-3 gap-4 pt-6 border-t border-[#CFC5B8]/40">
+              <div className="space-y-1">
+                <div className="w-6 h-6 rounded-full bg-[#6C5939] text-white flex items-center justify-center text-xs font-bold">1</div>
+                <h5 className="text-xs font-bold text-[#1B1C19]">Open on Phone</h5>
+                <p className="text-[11px] text-[#7E766B]">Scan the companion QR or visit the URL on your mobile browser.</p>
+              </div>
+              <div className="space-y-1">
+                <div className="w-6 h-6 rounded-full bg-[#6C5939] text-white flex items-center justify-center text-xs font-bold">2</div>
+                <h5 className="text-xs font-bold text-[#1B1C19]">Point at Screen</h5>
+                <p className="text-[11px] text-[#7E766B]">Aim your phone camera directly at the instructor's rotating QR token.</p>
+              </div>
+              <div className="space-y-1">
+                <div className="w-6 h-6 rounded-full bg-[#6C5939] text-white flex items-center justify-center text-xs font-bold">3</div>
+                <h5 className="text-xs font-bold text-[#1B1C19]">Instant Verification</h5>
+                <p className="text-[11px] text-[#7E766B]">Your attendance is signed and marked securely in under 2 seconds.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Manual Token Entry & Emergency Verification on Laptop (Span 5) */}
+        <div className="col-span-5 space-y-6">
+          <div className="glass-panel rounded-3xl p-8 border border-[#CFC5B8]/60 shadow-lg space-y-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-[#86724F]/10 text-[#6C5939] flex items-center justify-center">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[#1B1C19]">
+                  Manual Token Verification
+                </h3>
+                <span className="text-[11px] text-[#7E766B]">
+                  For laptop users with instructor-provided passkeys
+                </span>
+              </div>
+            </div>
+
+            {status === 'success' ? (
+              <div className="p-6 rounded-2xl bg-[#E7DFD1]/50 border border-[#86724F]/30 text-center space-y-3 animate-in zoom-in-95">
+                <div className="w-14 h-14 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-8 h-8" />
+                </div>
+                <h4 className="text-base font-bold text-[#1B1C19]">Attendance Confirmed</h4>
+                <p className="text-xs text-[#4C463C]">{message}</p>
                 <button
-                  type="button"
-                  onClick={startCamera}
-                  className="py-2 px-4 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition"
+                  onClick={() => {
+                    setStatus('idle');
+                    setMessage(null);
+                    setManualToken('');
+                  }}
+                  className="py-2 px-5 rounded-2xl bg-[#6C5939] text-white text-xs font-semibold hover:bg-[#554425] transition"
                 >
-                  <Camera className="w-4 h-4" />
-                  <span>Start Camera</span>
+                  Verify Another
                 </button>
               </div>
+            ) : status === 'error' ? (
+              <div className="p-6 rounded-2xl bg-[#FFDAD6]/50 border border-[#BA1A1A]/30 text-center space-y-3 animate-in zoom-in-95">
+                <div className="w-14 h-14 rounded-full bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center mx-auto">
+                  <AlertCircle className="w-8 h-8" />
+                </div>
+                <h4 className="text-base font-bold text-[#BA1A1A]">Verification Failed</h4>
+                <p className="text-xs text-[#93000A]">{message}</p>
+                <button
+                  onClick={() => {
+                    setStatus('idle');
+                    setMessage(null);
+                  }}
+                  className="py-2 px-5 rounded-2xl bg-[#F0EEE9] text-[#1B1C19] text-xs font-semibold hover:bg-[#E5E2DD] transition"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleManualSubmit} className="space-y-4">
+                <p className="text-xs text-[#4C463C]">
+                  If you are using a laptop in class and your instructor provides a short-lived manual passkey or JWT token, paste it below to register your presence:
+                </p>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#1B1C19]">
+                    Cryptographic Session Token / Passcode
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={manualToken}
+                    onChange={(e) => setManualToken(e.target.value)}
+                    placeholder="e.g. CR-QR-CS301-17319582910-A9F32 or encoded payload..."
+                    className="w-full p-3.5 rounded-2xl bg-white border border-[#CFC5B8] text-xs font-mono text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30 resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={status === 'scanning' || !manualToken.trim()}
+                  className="w-full py-3 px-5 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {status === 'scanning' ? (
+                    <span>Verifying with Campus Authority...</span>
+                  ) : (
+                    <>
+                      <span>Submit Token for Verification</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
             )}
 
-            {isCameraActive && (
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="mt-4 py-2 px-4 rounded-2xl bg-[#BA1A1A] hover:bg-[#93000a] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition"
-              >
-                <StopCircle className="w-4 h-4" />
-                <span>Stop Camera</span>
-              </button>
-            )}
-
-            <p className="text-[11px] text-[#7E766B] mt-4 text-center">
-              Cryptographic tokens rotate every 10s. Point directly at the QR code.
-            </p>
+            <div className="p-4 rounded-2xl bg-[#F0EEE9]/70 border border-[#CFC5B8]/40 flex items-start gap-3">
+              <Info className="w-4 h-4 text-[#86724F] shrink-0 mt-0.5" />
+              <p className="text-[11px] text-[#7E766B] leading-relaxed">
+                <strong>Anti-Proxy Notice:</strong> Session tokens expire every 10 seconds. Manually shared tokens are tied to active session windows and reject expired submissions automatically.
+              </p>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Manual Code Fallback */}
-      <div className="glass-panel rounded-3xl p-6 border border-[#CFC5B8]/50">
-        <div className="flex items-center gap-2 mb-3">
-          <KeyRound className="w-4 h-4 text-[#86724F]" />
-          <h3 className="text-xs font-bold text-[#1B1C19] uppercase tracking-wider">
-            Manual Token Entry Fallback
-          </h3>
+      {/* ========================================================================= */}
+      {/* MOBILE PRESENTATION (block md:hidden) - FULL OPTICAL CAMERA SCANNER */}
+      {/* ========================================================================= */}
+      <div className="block md:hidden space-y-6">
+        {/* Visual Scanner Frame */}
+        <div className="glass-panel rounded-3xl p-6 border border-[#CFC5B8]/60 flex flex-col items-center justify-center relative overflow-hidden min-h-[360px]">
+          {status === 'success' ? (
+            <div className="text-center space-y-3 animate-in zoom-in-95 duration-200 py-6">
+              <div className="w-16 h-16 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
+                <CheckCircle className="w-9 h-9" />
+              </div>
+              <h3 className="text-base font-bold text-[#1B1C19]">Attendance Recorded!</h3>
+              <p className="text-xs text-[#4C463C] max-w-xs mx-auto">{message}</p>
+              <button
+                onClick={() => {
+                  setStatus('idle');
+                  setMessage(null);
+                  setManualToken('');
+                }}
+                className="py-2.5 px-6 rounded-2xl bg-[#6C5939] text-white text-xs font-semibold hover:bg-[#554425] transition"
+              >
+                Scan Next Session
+              </button>
+            </div>
+          ) : status === 'error' ? (
+            <div className="text-center space-y-3 animate-in zoom-in-95 duration-200 py-6">
+              <div className="w-16 h-16 rounded-full bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center mx-auto">
+                <AlertCircle className="w-9 h-9" />
+              </div>
+              <h3 className="text-base font-bold text-[#BA1A1A]">Scan Notice</h3>
+              <p className="text-xs text-[#93000A] max-w-xs mx-auto">{message}</p>
+              <button
+                onClick={() => {
+                  setStatus('idle');
+                  setMessage(null);
+                }}
+                className="py-2.5 px-6 rounded-2xl bg-[#F0EEE9] text-[#1B1C19] text-xs font-semibold hover:bg-[#E5E2DD] transition"
+              >
+                Dismiss
+              </button>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col items-center">
+              {/* HTML5 QR Code Mount container */}
+              <div
+                id="qr-reader-container"
+                className={`w-full max-w-[300px] aspect-square rounded-2xl overflow-hidden border-2 border-[#6C5939]/40 bg-black shadow-lg ${
+                  isCameraActive ? 'block' : 'hidden'
+                }`}
+              />
+
+              {!isCameraActive && (
+                <div className="w-64 h-64 rounded-3xl border-2 border-dashed border-[#6C5939]/60 relative flex flex-col items-center justify-center bg-[#F6F3EE]/60 p-4 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mb-3">
+                    <QrCode className="w-8 h-8" />
+                  </div>
+                  <p className="text-sm font-bold text-[#1B1C19]">Optical Camera Ready</p>
+                  <p className="text-[11px] text-[#7E766B] mt-1 mb-4">
+                    Tap below to launch your phone's back camera
+                  </p>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="py-2.5 px-5 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Open Camera</span>
+                  </button>
+                </div>
+              )}
+
+              {isCameraActive && (
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="mt-4 py-2 px-5 rounded-2xl bg-[#BA1A1A] hover:bg-[#93000a] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition"
+                >
+                  <StopCircle className="w-4 h-4" />
+                  <span>Stop Camera</span>
+                </button>
+              )}
+
+              <p className="text-[11px] text-[#7E766B] mt-4 text-center">
+                Cryptographic tokens rotate every 10s. Point phone directly at screen.
+              </p>
+            </div>
+          )}
         </div>
-        <form onSubmit={handleManualSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={manualToken}
-            onChange={(e) => setManualToken(e.target.value)}
-            placeholder="Paste raw attendance token or JWT..."
-            className="flex-1 py-2.5 px-3 rounded-2xl bg-[#FFFFFF] border border-[#CFC5B8]/80 text-xs text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30"
-          />
-          <button
-            type="submit"
-            disabled={status === 'scanning' || !manualToken}
-            className="py-2.5 px-4 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-semibold transition disabled:opacity-50 shrink-0"
-          >
-            {status === 'scanning' ? 'Verifying...' : 'Submit'}
-          </button>
-        </form>
+
+        {/* Mobile Manual Fallback */}
+        <div className="glass-panel rounded-3xl p-6 border border-[#CFC5B8]/50">
+          <div className="flex items-center gap-2 mb-3">
+            <KeyRound className="w-4 h-4 text-[#86724F]" />
+            <h3 className="text-xs font-bold text-[#1B1C19] uppercase tracking-wider">
+              Manual Token Entry Fallback
+            </h3>
+          </div>
+          <form onSubmit={handleManualSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={manualToken}
+              onChange={(e) => setManualToken(e.target.value)}
+              placeholder="Paste token or passcode..."
+              className="flex-1 py-2.5 px-3 rounded-2xl bg-[#FFFFFF] border border-[#CFC5B8]/80 text-xs text-[#1B1C19] focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30"
+            />
+            <button
+              type="submit"
+              disabled={status === 'scanning' || !manualToken}
+              className="py-2.5 px-4 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-semibold transition disabled:opacity-50 shrink-0"
+            >
+              {status === 'scanning' ? 'Verifying...' : 'Submit'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

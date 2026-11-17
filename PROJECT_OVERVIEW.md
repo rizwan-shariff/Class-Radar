@@ -136,3 +136,4 @@ pnpm dev -p 3001
 
 - **Frontend Application:** [http://localhost:3001](http://localhost:3001)
 - **Login Portal:** [http://localhost:3001/login](http://localhost:3001/login) (with 1-click Student, Faculty, and Admin demo persona logins)
+

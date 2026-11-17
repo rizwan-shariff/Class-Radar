@@ -5,7 +5,21 @@ import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { api } from '@/lib/api';
 import { useSocket } from '@/lib/useSocket';
-import { Users, XCircle, RotateCcw, CheckCircle2, Copy, Check } from 'lucide-react';
+import {
+  Users,
+  XCircle,
+  RotateCcw,
+  CheckCircle2,
+  Copy,
+  Check,
+  Shield,
+  Clock,
+  Sparkles,
+  Maximize2,
+  Tv,
+  ArrowRight
+} from 'lucide-react';
+import Link from 'next/link';
 
 function SessionContent() {
   const searchParams = useSearchParams();
@@ -52,23 +66,23 @@ function SessionContent() {
       const res = await api.attendance.getToken(activeSessionId);
       if (res && res.token) {
         setToken(res.token);
-        setCountdown(10);
-      } else {
-        generateNewToken();
+        const expMs = new Date(res.expiresAt).getTime() - Date.now();
+        const secondsLeft = Math.max(1, Math.round(expMs / 1000));
+        setCountdown(secondsLeft);
       }
-    } catch (err) {
+    } catch (e) {
       generateNewToken();
     }
   };
 
-  // 10-second rotation timer
+  // 10-second countdown ticker
   useEffect(() => {
     if (isClosed) return;
 
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          if (sessionId && !sessionId.startsWith('session-live')) {
+          if (sessionId && sessionId !== 'session-live-01') {
             fetchToken(sessionId);
           } else {
             generateNewToken();
@@ -79,147 +93,225 @@ function SessionContent() {
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [sessionId, isClosed]);
 
-  // Socket.IO for live student scan counter
-  const { joinSession } = useSocket({
-    'attendance:count': (payload: any) => {
-      if (payload.sessionId === sessionId) {
-        setPresentCount(payload.present);
-        if (payload.total) setTotalCount(payload.total);
-      }
+  // Real-time live attendance scan counter
+  useSocket({
+    'attendance:marked': (payload: any) => {
+      setPresentCount((prev) => Math.min(totalCount, prev + 1));
     },
   });
 
-  useEffect(() => {
-    if (sessionId) {
-      joinSession(sessionId);
-    }
-  }, [sessionId]);
-
   const handleCloseSession = async () => {
-    if (sessionId) {
-      try {
+    if (!confirm('Are you sure you want to lock and close this attendance session?')) return;
+    try {
+      if (sessionId && sessionId !== 'session-live-01') {
         await api.attendance.closeSession(sessionId);
-      } catch (e) {
-        // ignore
       }
+    } catch (e) {
+      // ignore
     }
     setIsClosed(true);
   };
 
   const handleCopyToken = () => {
-    if (!token) return;
-    navigator.clipboard.writeText(token);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Quick increment for local demonstration
-  const handleSimulateScan = () => {
-    setPresentCount((c) => Math.min(totalCount, c + 1));
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(token);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-4 space-y-6">
-      {/* Session Header */}
-      <div className="glass-panel rounded-3xl p-6 flex items-center justify-between">
-        <div>
-          <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
-            Live Attendance Engine
-          </span>
-          <h2 className="text-xl font-bold text-[#1B1C19] mt-0.5">Rotating QR Session</h2>
-          <p className="text-xs text-[#4C463C] mt-0.5">Slot: {slotId}</p>
-        </div>
-
-        {/* Live Attendance Counter */}
-        <div className="flex items-center gap-2 py-2 px-3.5 rounded-2xl bg-[#E7DFD1] text-[#6C5939]">
-          <Users className="w-4 h-4" />
-          <span className="text-sm font-bold">
-            {presentCount} / {totalCount}
-          </span>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      {/* Specular Ambient Glows */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-10 left-1/3 w-[45rem] h-[30rem] rounded-full bg-[#F9DFB5]/25 blur-[120px]" />
       </div>
 
-      {/* Main QR Display */}
-      <div className="glass-panel rounded-3xl p-8 border border-[#CFC5B8]/60 flex flex-col items-center justify-center space-y-5 text-center">
-        {isClosed ? (
-          <div className="py-12 space-y-3">
-            <CheckCircle2 className="w-16 h-16 text-[#6C5939] mx-auto opacity-80" />
-            <h3 className="text-lg font-bold text-[#1B1C19]">Session Finalized</h3>
-            <p className="text-xs text-[#7E766B] max-w-xs mx-auto">
-              This attendance session has been locked. All remaining students without a scan record have been marked absent.
-            </p>
+      {/* Editorial Header Section */}
+      <section className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-b border-[#CFC5B8]/40 pb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#86724F]">
+              Podium Screen Broadcast · Slot {slotId}
+            </span>
           </div>
-        ) : (
-          <>
-            {/* High-Contrast Crisp QR Card */}
-            <div className="relative flex items-center justify-center p-6 bg-white rounded-3xl shadow-xl border border-[#CFC5B8]/60">
-              <QRCodeSVG
-                value={token || 'classradar-session'}
-                size={230}
-                level="H"
-                includeMargin={false}
-              />
-            </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B1C19] tracking-tight">
+            Cryptographic Attendance Beacon
+          </h1>
+          <p className="text-xs sm:text-sm text-[#4C463C]">
+            Project this screen onto the classroom projector. Tokens dynamically rotate every 10 seconds to invalidate photo sharing.
+          </p>
+        </div>
 
-            {/* Rotation Countdown */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#4C463C]">
-              <RotateCcw className="w-4 h-4 animate-spin text-[#6C5939]" />
-              <span>
-                Token rotates in <strong className="text-[#6C5939] font-mono text-sm">{countdown}s</strong>
+        {/* Action Controls */}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/faculty"
+            className="px-4 py-2 rounded-full bg-white border border-[#CFC5B8] hover:bg-[#F0EEE9] text-xs font-bold text-[#1B1C19] transition flex items-center gap-1.5 shadow-sm"
+          >
+            <span>Back to Schedule</span>
+          </Link>
+
+          {!isClosed && (
+            <button
+              onClick={handleCloseSession}
+              className="py-2 px-4 rounded-full bg-[#FFDAD6] text-[#BA1A1A] hover:bg-[#ffcdc7] text-xs font-bold flex items-center gap-1.5 transition shadow-sm active:scale-95"
+            >
+              <XCircle className="w-4 h-4" />
+              <span>Lock Attendance</span>
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* Live QR Console Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Massive Projector QR Code Card (Span 7) */}
+        <div className="lg:col-span-7 glass-panel rounded-3xl p-6 sm:p-10 border border-[#CFC5B8]/60 shadow-lg text-center flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Specular Edge Rim */}
+          <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent" />
+
+          {isClosed ? (
+            <div className="py-16 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#F0EEE9] text-[#7E766B] flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+              <h3 className="text-xl font-bold text-[#1B1C19]">Attendance Session Closed</h3>
+              <p className="text-xs text-[#7E766B] max-w-sm mx-auto">
+                No further check-ins will be accepted. Total verified: {presentCount} students.
+              </p>
+              <div className="pt-2">
+                <Link
+                  href="/faculty"
+                  className="px-5 py-2.5 rounded-full bg-[#6C5939] text-white text-xs font-bold hover:bg-[#554425] transition"
+                >
+                  Return to Dashboard
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 w-full flex flex-col items-center">
+              {/* Dynamic Rotating QR Mount */}
+              <div className="p-6 bg-white rounded-3xl border-2 border-[#6C5939]/30 shadow-xl relative group">
+                <QRCodeSVG
+                  value={token}
+                  size={260}
+                  level="H"
+                  includeMargin={false}
+                />
+
+                {/* Live pulse overlay */}
+                <div className="absolute -top-3 -right-3 flex items-center gap-1 bg-[#6C5939] text-white py-1 px-3 rounded-full text-[10px] font-bold shadow-md">
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                  <span>LIVE BEACON</span>
+                </div>
+              </div>
+
+              {/* 10-Second Ticker Gauge */}
+              <div className="w-full max-w-xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-[#1B1C19]">
+                  <span className="flex items-center gap-1.5 text-[#86724F]">
+                    <Clock className="w-4 h-4 animate-spin" />
+                    <span>Cryptographic Refresh</span>
+                  </span>
+                  <span>{countdown}s remaining</span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-[#F0EEE9] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#6C5939] transition-all duration-1000 ease-linear"
+                    style={{ width: `${(countdown / 10) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Token Copy Fallback */}
+              <div className="w-full max-w-sm pt-2">
+                <button
+                  onClick={handleCopyToken}
+                  className="w-full py-2.5 px-4 rounded-xl bg-white border border-[#CFC5B8] hover:bg-[#F0EEE9] text-xs font-mono text-[#4C463C] transition flex items-center justify-between shadow-sm"
+                >
+                  <span className="truncate">{token}</span>
+                  <span className="shrink-0 ml-2 font-sans font-bold text-[#6C5939] flex items-center gap-1">
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? 'Copied' : 'Copy'}</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Live Turnout & Anti-Proxy Security Intel (Span 5) */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Live Turnout Counter */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-[#CFC5B8]/60 shadow-md space-y-5">
+            <div className="flex items-center justify-between border-b border-[#CFC5B8]/40 pb-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#86724F]">
+                Realtime Scan Turnout
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-[#E7DFD1] text-[#6C5939] text-[10px] font-bold uppercase">
+                Active Telemetry
               </span>
             </div>
 
-            {/* Token Quick-Copy Box for testing scanner across tabs */}
-            <div className="w-full bg-[#FFFFFF]/80 border border-[#CFC5B8]/70 rounded-2xl p-3 flex items-center justify-between text-left">
-              <div className="truncate mr-2">
-                <span className="text-[10px] font-bold text-[#7E766B] uppercase block">
-                  Active Token Payload
-                </span>
-                <span className="text-xs font-mono text-[#1B1C19] truncate block max-w-xs">
-                  {token}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleCopyToken}
-                className="py-1.5 px-3 rounded-xl bg-[#F0EEE9] hover:bg-[#E5E2DD] text-xs font-semibold text-[#1B1C19] flex items-center gap-1 shrink-0 transition"
-                title="Copy token to test in Student Scanner"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-[#6C5939]" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
-              </button>
+            <div className="flex items-baseline gap-3">
+              <span className="text-4xl sm:text-5xl font-extrabold text-[#1B1C19]">
+                {presentCount}
+              </span>
+              <span className="text-sm font-semibold text-[#7E766B]">
+                of {totalCount} students verified ({Math.round((presentCount / (totalCount || 1)) * 100)}%)
+              </span>
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={handleSimulateScan}
-                className="py-2 px-4 rounded-2xl bg-[#E7DFD1] hover:bg-[#ded4c3] text-[#6C5939] text-xs font-bold transition"
-              >
-                +1 Simulate Scan
-              </button>
-              <button
-                type="button"
-                onClick={handleCloseSession}
-                className="py-2 px-4 rounded-2xl bg-[#BA1A1A] hover:bg-[#93000a] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
-              >
-                <XCircle className="w-4 h-4" />
-                <span>Finalize Session</span>
-              </button>
+            <div className="h-3 w-full rounded-full bg-[#F0EEE9] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[#6C5939] transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(4, (presentCount / (totalCount || 1)) * 100))}%` }}
+              />
             </div>
-          </>
-        )}
+          </div>
+
+          {/* Security & Anti-Proxy Guidelines */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-[#CFC5B8]/60 shadow-md space-y-4">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-[#6C5939]" />
+              <h3 className="text-base font-bold text-[#1B1C19]">Anti-Proxy Architecture</h3>
+            </div>
+
+            <ul className="space-y-3 text-xs text-[#4C463C] leading-relaxed">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] mt-1.5 shrink-0" />
+                <span><strong>Short-Lived JWTs:</strong> Each QR contains an HMAC-signed token expiring in exactly 10 seconds.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] mt-1.5 shrink-0" />
+                <span><strong>Mobile-Only Scan Enforcement:</strong> Students must scan live from their mobile devices; screenshots sent to remote friends expire before they can be opened.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] mt-1.5 shrink-0" />
+                <span><strong>Immediate Ledger Sync:</strong> Once verified, attendance registers across student bunk calculators instantly.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-export default function FacultyQRSessionPage() {
+export default function FacultySessionPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs text-[#7E766B]">Loading QR session...</div>}>
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto p-12 text-center text-xs font-semibold text-[#7E766B]">
+          Initializing live QR attendance beacon...
+        </div>
+      }
+    >
       <SessionContent />
     </Suspense>
   );

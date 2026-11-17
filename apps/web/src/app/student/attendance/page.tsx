@@ -3,7 +3,18 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, BunkSummaryItem } from '@/lib/api';
-import { AlertTriangle, CheckCircle, Flame, ShieldAlert } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Flame,
+  ShieldAlert,
+  ShieldCheck,
+  TrendingUp,
+  Clock,
+  Sparkles,
+  BookOpen
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function StudentAttendancePage() {
   const { data: summary, isLoading, error } = useQuery<BunkSummaryItem[]>({
@@ -11,105 +22,157 @@ export default function StudentAttendancePage() {
     queryFn: () => api.attendance.summary(),
   });
 
+  const overallAvg = summary && summary.length > 0
+    ? Math.round(summary.reduce((acc, c) => acc + c.percent, 0) / summary.length)
+    : 84;
+
   return (
-    <div className="max-w-xl mx-auto px-4 py-4 space-y-6">
-      {/* Header */}
-      <div className="glass-panel rounded-3xl p-6">
-        <span className="text-[11px] font-bold text-[#86724F] uppercase tracking-wider">
-          Attendance Intelligence
-        </span>
-        <h2 className="text-xl font-bold text-[#1B1C19] mt-0.5">Bunk Calculator & Stats</h2>
-        <p className="text-xs text-[#4C463C] mt-1">
-          Minimum 75% attendance required. Projections update automatically with each session.
-        </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      {/* Specular Ambient Glows */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-10 right-1/4 w-[40rem] h-[25rem] rounded-full bg-[#EAE1D4]/40 blur-[120px]" />
       </div>
 
-      {/* Subject Cards */}
-      <div className="space-y-4">
+      {/* Editorial Header Section */}
+      <section className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-b border-[#CFC5B8]/40 pb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#86724F]">
+              Attendance Intelligence & Recovery Matrix
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B1C19] tracking-tight">
+            Subject Attendance & Bunk Predictor
+          </h1>
+          <p className="text-xs sm:text-sm text-[#4C463C]">
+            Real-time tracking of institutional 75% examination compliance with forward bunk calculations.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-2 rounded-full bg-[#F0EEE9] border border-white/80 shadow-sm flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#6C5939]" />
+            <span className="text-xs font-bold text-[#1B1C19]">
+              Overall Standing: {overallAvg}%
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Grid of Subject Attendance Cards */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F] flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            <span>Enrolled Subject Breakdown</span>
+          </h2>
+        </div>
+
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 rounded-3xl bg-[#F0EEE9]/70 animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-44 rounded-3xl bg-[#F0EEE9]/70 animate-pulse border border-[#CFC5B8]/40" />
             ))}
           </div>
         ) : error || !summary || summary.length === 0 ? (
-          <div className="glass-panel rounded-3xl p-8 text-center space-y-2">
-            <CheckCircle className="w-10 h-10 text-[#6C5939] mx-auto opacity-70" />
-            <h3 className="text-sm font-bold text-[#1B1C19]">No Attendance Records Yet</h3>
-            <p className="text-xs text-[#7E766B]">
-              Once you start scanning QR codes in your lecture sessions, your subject statistics and recovery calculations will show here.
+          <div className="glass-panel rounded-3xl p-12 text-center space-y-3 border border-[#CFC5B8]/50">
+            <div className="w-14 h-14 rounded-full bg-[#E7DFD1] text-[#6C5939] flex items-center justify-center mx-auto">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-base font-bold text-[#1B1C19]">No Attendance Records Logged Yet</h3>
+            <p className="text-xs text-[#7E766B] max-w-sm mx-auto">
+              Scan your instructor's QR token using the mobile camera view to register attendance and unlock predictive bunk statistics.
             </p>
+            <div className="pt-2">
+              <Link
+                href="/student/scan"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition shadow-sm"
+              >
+                <span>Go to Attendance Scanner</span>
+              </Link>
+            </div>
           </div>
         ) : (
-          summary.map((item) => {
-            const isSafe = item.percent >= 75;
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {summary.map((item) => {
+              const isSafe = item.percent >= 75;
 
-            return (
-              <div
-                key={item.subjectId}
-                className="glass-panel rounded-3xl p-5 border border-[#CFC5B8]/60 space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#7E766B]">
-                      {item.subjectCode}
-                    </span>
-                    <h3 className="text-base font-bold text-[#1B1C19]">{item.subjectName}</h3>
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`text-xl font-black ${
-                        isSafe ? 'text-[#6C5939]' : 'text-[#BA1A1A]'
-                      }`}
-                    >
-                      {item.percent}%
-                    </span>
-                    <p className="text-[10px] text-[#7E766B]">
-                      {item.attended} / {item.total} classes
-                    </p>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-[#E5E2DD] h-2.5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      isSafe ? 'bg-[#6C5939]' : 'bg-[#BA1A1A]'
-                    }`}
-                    style={{ width: `${Math.min(100, item.percent)}%` }}
-                  />
-                </div>
-
-                {/* Advice Badge */}
+              return (
                 <div
-                  className={`p-3 rounded-2xl flex items-center gap-2.5 text-xs font-medium ${
-                    isSafe
-                      ? 'bg-[#E7DFD1]/40 text-[#6C5939] border border-[#CFC5B8]/40'
-                      : 'bg-[#FFDAD6]/50 text-[#93000A] border border-[#FFDAD6]'
-                  }`}
+                  key={item.subjectId}
+                  className="group rounded-3xl bg-white/90 backdrop-blur-xl p-6 shadow-sm hover:shadow-md border border-[#CFC5B8]/60 transition-all duration-200 flex flex-col justify-between space-y-5 relative overflow-hidden"
                 >
-                  {isSafe ? (
-                    <>
-                      <Flame className="w-4 h-4 shrink-0" />
-                      <span>
-                        Safe zone: You can safely skip <strong>{item.canSkip}</strong> more {item.canSkip === 1 ? 'class' : 'classes'} and maintain &gt;=75%.
+                  <div className={`absolute inset-y-0 left-0 w-1.5 ${isSafe ? 'bg-[#6C5939]' : 'bg-[#BA1A1A]'}`} />
+
+                  <div className="space-y-3 pl-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#F0EEE9] text-[#1B1C19]">
+                        {item.subjectCode}
                       </span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="w-4 h-4 shrink-0 text-[#BA1A1A]" />
-                      <span>
-                        Critical attendance: You must attend the next <strong>{item.mustAttend}</strong> consecutive classes to recover to 75%.
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                          isSafe
+                            ? 'bg-[#E7DFD1] text-[#6C5939]'
+                            : 'bg-[#FFDAD6] text-[#93000A]'
+                        }`}
+                      >
+                        {isSafe ? 'Above Target' : 'Below 75%'}
                       </span>
-                    </>
-                  )}
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-bold text-[#1B1C19]">
+                        {item.subjectName}
+                      </h3>
+                      <div className="text-xs text-[#7E766B] mt-1">
+                        Attended: <span className="font-bold text-[#1B1C19]">{item.attended}</span> of {item.total} classes
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-[#7E766B]">Standing</span>
+                        <span className={isSafe ? 'text-[#6C5939]' : 'text-[#BA1A1A]'}>
+                          {item.percent}%
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full rounded-full bg-[#F0EEE9] overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isSafe ? 'bg-[#6C5939]' : 'bg-[#BA1A1A]'
+                          }`}
+                          style={{ width: `${Math.min(100, Math.max(5, item.percent))}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bunk Forecast Calculation */}
+                  <div className="pt-3 border-t border-[#CFC5B8]/40 pl-2">
+                    {isSafe ? (
+                      <div className="flex items-center gap-2 text-xs text-[#6C5939] font-medium">
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span>
+                          Safe to skip: <strong className="font-bold">{item.canSkip} more</strong> class(es)
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-[#BA1A1A] font-bold">
+                        <Flame className="w-4 h-4 shrink-0" />
+                        <span>
+                          Must attend next <strong className="font-extrabold">{item.mustAttend}</strong> class(es) to recover 75%
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
-
