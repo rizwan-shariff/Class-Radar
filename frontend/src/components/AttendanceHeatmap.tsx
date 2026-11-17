@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Clock } from 'lucide-react';
 
 interface AttendanceHeatmapProps {
   studentName?: string;
@@ -21,9 +22,22 @@ export function AttendanceHeatmap({
     fullDate: string;
     isPresent: boolean;
     weekday: string;
+    periodSlot: string;
+    timeRange: string;
     x: number;
     y: number;
   } | null>(null);
+
+  // Period timeslot schedules matching official college timetable
+  const PERIOD_SLOTS = [
+    { period: 1, range: '09:00 - 10:00 AM' },
+    { period: 2, range: '10:00 - 11:00 AM' },
+    { period: 3, range: '11:30 - 12:30 PM' },
+    { period: 4, range: '12:30 - 01:30 PM' },
+    { period: 5, range: '02:30 - 03:30 PM' },
+    { period: 6, range: '03:30 - 04:30 PM' },
+    { period: 7, range: '04:30 - 05:00 PM' },
+  ];
 
   // Generate simulated 60-day calendar boxes
   const boxes = React.useMemo(() => {
@@ -43,11 +57,17 @@ export function AttendanceHeatmap({
       const date = new Date(2026, 8, 1); // Start Sept 1, 2026
       date.setDate(date.getDate() + i);
 
+      // Map a consistent period slot
+      const slotIndex = ((seed + i) % PERIOD_SLOTS.length);
+      const slot = PERIOD_SLOTS[slotIndex]!;
+
       list.push({
         dayIndex: i,
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         fullDate: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
         weekday: date.toLocaleDateString('en-US', { weekday: 'long' }),
+        periodSlot: `Period ${slot.period}`,
+        timeRange: slot.range,
         isPresent,
       });
     }
@@ -113,7 +133,8 @@ export function AttendanceHeatmap({
             className="absolute z-30 pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 transition-all duration-150 ease-out animate-in fade-in zoom-in-95"
             style={{ left: `${hoveredBox.x}px`, top: `${hoveredBox.y - 6}px` }}
           >
-            <div className="bg-[#1E2024]/95 dark:bg-[#2A2D35]/95 backdrop-blur-md text-white rounded-xl py-1.5 px-3 shadow-2xl border border-white/15 text-center min-w-[130px] space-y-0.5">
+            <div className="bg-[#1E2024]/95 dark:bg-[#2A2D35]/95 backdrop-blur-md text-white rounded-xl py-2 px-3.5 shadow-2xl border border-white/15 text-center min-w-[160px] space-y-1">
+              {/* Status Header */}
               <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-bold tracking-wider">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
@@ -121,15 +142,26 @@ export function AttendanceHeatmap({
                   }`}
                 />
                 <span className={hoveredBox.isPresent ? 'text-[#34D399]' : 'text-[#FCA5A5]'}>
-                  {hoveredBox.isPresent ? 'Present' : 'Absent / No Class'}
+                  {hoveredBox.isPresent ? 'Present (Verified)' : 'Absent / Not Logged'}
                 </span>
               </div>
-              <p className="text-xs font-extrabold text-[#F3F4F6] whitespace-nowrap">
-                {hoveredBox.date}
-              </p>
-              <p className="text-[10px] text-[#9CA3AF] whitespace-nowrap">
-                {hoveredBox.weekday}
-              </p>
+
+              {/* Date & Weekday */}
+              <div>
+                <p className="text-xs font-extrabold text-[#F3F4F6] whitespace-nowrap">
+                  {hoveredBox.date} · {hoveredBox.weekday}
+                </p>
+              </div>
+
+              {/* Timeslot Banner */}
+              <div className="pt-1 border-t border-white/10 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#93C5FD]">
+                <Clock className="w-3 h-3 text-[#60A5FA]" />
+                <span>{hoveredBox.timeRange}</span>
+              </div>
+
+              <div className="text-[10px] text-[#9CA3AF]">
+                {hoveredBox.periodSlot}
+              </div>
 
               {/* Tooltip caret arrow pointing down */}
               <div className="w-2 h-2 bg-[#1E2024]/95 dark:bg-[#2A2D35]/95 border-r border-b border-white/15 transform rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
