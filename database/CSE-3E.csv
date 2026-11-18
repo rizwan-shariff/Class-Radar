@@ -1,33 +1,33 @@
-﻿department,section,weekday,period,subject_code,faculty_email,room
-CSE,CSE-3E,1,1,1BCS302,veena.mohan@classradar.edu,Room 406
-CSE,CSE-3E,1,2,1BCS304,amruthashree.vm@classradar.edu,Room 406
-CSE,CSE-3E,1,3,1BCS303,goutham.naik@classradar.edu,Room 406
-CSE,CSE-3E,1,4,1BMAT301,darshan.ns@classradar.edu,Room 406
-CSE,CSE-3E,1,5,PROCTOR,veena.mohan@classradar.edu,Room 406
-CSE,CSE-3E,1,6,PROCTOR,veena.mohan@classradar.edu,Room 406
-CSE,CSE-3E,1,7,NSS_PE,manoj.sogi@classradar.edu,Room 406
-CSE,CSE-3E,2,1,1BETC306,manoj.sogi@classradar.edu,Room 406
-CSE,CSE-3E,2,2,1BCS304,amruthashree.vm@classradar.edu,Room 406
-CSE,CSE-3E,2,3,1BCS302,veena.mohan@classradar.edu,Room 406
-CSE,CSE-3E,2,4,1BCS305,sushma.mk@classradar.edu,Room 406
-CSE,CSE-3E,2,5,1BMAT301,darshan.ns@classradar.edu,Room 406
-CSE,CSE-3E,2,6,1BMAT301,darshan.ns@classradar.edu,Room 406
-CSE,CSE-3E,3,1,1BCS302,veena.mohan@classradar.edu,CS Lab 7 (DDCO)
-CSE,CSE-3E,3,2,1BPCCL308,amruthashree.vm@classradar.edu,IS Lab 2 (CDD/DSA)
-CSE,CSE-3E,3,3,1BCS303,goutham.naik@classradar.edu,Room 406
-CSE,CSE-3E,3,4,1BCS302,veena.mohan@classradar.edu,Room 406
-CSE,CSE-3E,3,5,1BCS305,sushma.mk@classradar.edu,Room 406
-CSE,CSE-3E,3,6,1BCS305,sushma.mk@classradar.edu,Room 406
-CSE,CSE-3E,3,7,NSS_PE,manoj.sogi@classradar.edu,Room 406
-CSE,CSE-3E,4,1,1BETC306,manoj.sogi@classradar.edu,CS Lab 5 (DAV)
-CSE,CSE-3E,4,2,1BCS303,goutham.naik@classradar.edu,IS Lab 2 (CDD/DSA)
-CSE,CSE-3E,4,3,1BCS304,amruthashree.vm@classradar.edu,Room 406
-CSE,CSE-3E,4,4,1BCS303,goutham.naik@classradar.edu,Room 406
-CSE,CSE-3E,4,5,1BCS302,veena.mohan@classradar.edu,CS Lab 7 (DDCO)
-CSE,CSE-3E,4,6,1BPCCL308,amruthashree.vm@classradar.edu,IS Lab 2 (CDD/DSA)
-CSE,CSE-3E,5,1,1BMAT301,darshan.ns@classradar.edu,Room 406
-CSE,CSE-3E,5,2,1BETC306,manoj.sogi@classradar.edu,Room 406
-CSE,CSE-3E,5,3,1BETC306,manoj.sogi@classradar.edu,CS Lab 5 (DAV)
-CSE,CSE-3E,5,4,1BCS303,goutham.naik@classradar.edu,IS Lab 2 (CDD/DSA)
-CSE,CSE-3E,5,5,1BCS305,sushma.mk@classradar.edu,Room 406
-CSE,CSE-3E,5,6,PROCTOR,veena.mohan@classradar.edu,Room 406
+department,section,weekday,period,subject_code,faculty_name,faculty_email,room
+CSE,CSE-3E,1,1,1BCS302,Dr. Lokesh S,veena.mohan@classradar.edu,Room 406
+CSE,CSE-3E,1,2,1BCS304,Dr. B. M. Mandini,amruthashree.vm@classradar.edu,Room 406
+CSE,CSE-3E,1,3,1BCS303,Ms. Kavitha S,goutham.naik@classradar.edu,Room 406
+CSE,CSE-3E,1,4,1BMAT301,Dr. Bhuvan E N,darshan.ns@classradar.edu,Room 406
+CSE,CSE-3E,1,5,PROCTOR,Proctor,veena.mohan@classradar.edu,Room 406
+CSE,CSE-3E,1,6,PROCTOR,Proctor,veena.mohan@classradar.edu,Room 406
+CSE,CSE-3E,1,7,NSS_PE,NSS / Physical Education,manoj.sogi@classradar.edu,Room 406
+CSE,CSE-3E,2,1,1BETC306,Ms. Sneha S,manoj.sogi@classradar.edu,Room 406
+CSE,CSE-3E,2,2,1BCS304,Dr. B. M. Mandini,amruthashree.vm@classradar.edu,Room 406
+CSE,CSE-3E,2,3,1BCS302,Dr. Lokesh S,veena.mohan@classradar.edu,Room 406
+CSE,CSE-3E,2,4,1BCS305,Ms. Sahana K J,sushma.mk@classradar.edu,Room 406
+CSE,CSE-3E,2,5,1BMAT301,Dr. Bhuvan E N,darshan.ns@classradar.edu,Room 406
+CSE,CSE-3E,2,6,1BMAT301,Dr. Bhuvan E N,darshan.ns@classradar.edu,Room 406
+CSE,CSE-3E,3,1,1BCS302,Dr. Lokesh S,veena.mohan@classradar.edu,CS Lab 7 (DDCO)
+CSE,CSE-3E,3,2,1BPCCL308,CSE DSA Lab Faculty,amruthashree.vm@classradar.edu,IS Lab 2 (CDD/DSA)
+CSE,CSE-3E,3,3,1BCS303,Ms. Kavitha S,goutham.naik@classradar.edu,Room 406
+CSE,CSE-3E,3,4,1BCS302,Dr. Lokesh S,veena.mohan@classradar.edu,Room 406
+CSE,CSE-3E,3,5,1BCS305,Ms. Sahana K J,sushma.mk@classradar.edu,Room 406
+CSE,CSE-3E,3,6,1BCS305,Ms. Sahana K J,sushma.mk@classradar.edu,Room 406
+CSE,CSE-3E,3,7,NSS_PE,NSS / Physical Education,manoj.sogi@classradar.edu,Room 406
+CSE,CSE-3E,4,1,1BETC306,Ms. Sneha S,manoj.sogi@classradar.edu,CS Lab 5 (DAV)
+CSE,CSE-3E,4,2,1BCS303,Ms. Kavitha S,goutham.naik@classradar.edu,IS Lab 2 (CDD/DSA)
+CSE,CSE-3E,4,3,1BCS304,Dr. B. M. Mandini,amruthashree.vm@classradar.edu,Room 406
+CSE,CSE-3E,4,4,1BCS303,Ms. Kavitha S,goutham.naik@classradar.edu,Room 406
+CSE,CSE-3E,4,5,1BCS302,Dr. Lokesh S,veena.mohan@classradar.edu,CS Lab 7 (DDCO)
+CSE,CSE-3E,4,6,1BPCCL308,CSE DSA Lab Faculty,amruthashree.vm@classradar.edu,IS Lab 2 (CDD/DSA)
+CSE,CSE-3E,5,1,1BMAT301,Dr. Bhuvan E N,darshan.ns@classradar.edu,Room 406
+CSE,CSE-3E,5,2,1BETC306,Ms. Sneha S,manoj.sogi@classradar.edu,Room 406
+CSE,CSE-3E,5,3,1BETC306,Ms. Sneha S,manoj.sogi@classradar.edu,CS Lab 5 (DAV)
+CSE,CSE-3E,5,4,1BCS303,Ms. Kavitha S,goutham.naik@classradar.edu,IS Lab 2 (CDD/DSA)
+CSE,CSE-3E,5,5,1BCS305,Ms. Sahana K J,sushma.mk@classradar.edu,Room 406
+CSE,CSE-3E,5,6,PROCTOR,Proctor,veena.mohan@classradar.edu,Room 406
