@@ -135,7 +135,8 @@ export const attachRealtime = (
     });
 
     // Faculty only: join:session – subscribe to a specific attendance session
-    socket.on('join:session', (sessionId: string) => {
+    socket.on('join:session', (data: any) => {
+      const sessionId = typeof data === 'string' ? data : data?.sessionId;
       if (role !== 'FACULTY' && role !== 'ADMIN') {
         socket.emit('error', { code: 'FORBIDDEN', message: 'Faculty only' });
         return;

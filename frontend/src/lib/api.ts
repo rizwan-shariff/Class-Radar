@@ -3,7 +3,18 @@
  * Directly connected to Fastify backend API & Real Database
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const getApiBase = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // If accessing from mobile/LAN IP or domain, use the current host with port 3000
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `${window.location.protocol}//${hostname}:3000/api/v1`;
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+};
+
+export const getApiBaseUrl = getApiBase;
 
 export interface User {
   id: string;
@@ -98,7 +109,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const base = getApiBase();
+  const response = await fetch(`${base}${path}`, {
     ...options,
     headers,
   });

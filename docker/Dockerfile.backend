@@ -1,44 +1,31 @@
 # Node alpine base
 FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat openssl
 RUN npm install -g pnpm@10.5.2
 WORKDIR /app
 
-# Build stage
-FROM base AS builder
+# Runner stage
+FROM base AS runner
 WORKDIR /app
-
-# Copy package manifests
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy backend source
-COPY backend/ ./backend/
-WORKDIR /app/backend
-RUN npx prisma generate
-
-# Production runner stage
-FROM node:20-alpine AS runner
-RUN npm install -g pnpm@10.5.2
-WORKDIR /app/backend
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
-COPY backend/package.json /app/backend/
+# Copy manifests
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
 
-# Install production dependencies only
-RUN cd /app && pnpm install --prod --frozen-lockfile
+# Install workspace dependencies
+RUN pnpm install --frozen-lockfile
 
-COPY --from=builder /app/backend/node_modules/.prisma /app/backend/node_modules/.prisma
-COPY --from=builder /app/backend/node_modules/@prisma /app/backend/node_modules/@prisma
-COPY backend/ ./
+# Copy backend code
+COPY backend/ ./backend/
+
+WORKDIR /app/backend
+RUN pnpm exec prisma generate
 
 EXPOSE 3000
 
-CMD ["npx", "tsx", "src/server.ts"]
+CMD ["pnpm", "exec", "tsx", "src/server.ts"]
 

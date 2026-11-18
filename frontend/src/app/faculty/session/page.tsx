@@ -97,11 +97,17 @@ function SessionContent() {
   }, [sessionId, isClosed]);
 
   // Real-time live attendance scan counter
-  useSocket({
+  const { joinSession } = useSocket({
     'attendance:marked': (payload: any) => {
       setPresentCount((prev) => Math.min(totalCount, prev + 1));
     },
   });
+
+  useEffect(() => {
+    if (sessionId && sessionId !== 'session-live-01') {
+      joinSession(sessionId);
+    }
+  }, [sessionId, joinSession]);
 
   const handleCloseSession = async () => {
     if (!confirm('Are you sure you want to lock and close this attendance session?')) return;

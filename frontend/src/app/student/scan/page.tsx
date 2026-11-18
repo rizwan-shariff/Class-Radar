@@ -44,7 +44,13 @@ export default function StudentScanPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setMobileUrl(window.location.href);
+      const hostname = window.location.hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        // Use local IP so scanning from mobile works immediately
+        setMobileUrl(`http://10.120.87.71:3001/student/scan`);
+      } else {
+        setMobileUrl(window.location.href);
+      }
     }
   }, []);
 
@@ -309,7 +315,7 @@ export default function StudentScanPage() {
                 </p>
                 <div className="pt-1">
                   <span className="text-[11px] font-mono text-[#86724F] bg-[#F6F3EE] px-2 py-1 rounded-md border border-[#CFC5B8]/40">
-                    classradar.app/student/scan
+                    {mobileUrl || 'http://10.120.87.71:3001/student/scan'}
                   </span>
                 </div>
               </div>

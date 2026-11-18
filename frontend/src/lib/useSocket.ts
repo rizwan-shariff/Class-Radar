@@ -2,7 +2,15 @@ import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getToken } from './api';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+const getSocketUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `${window.location.protocol}//${hostname}:3000`;
+    }
+  }
+  return process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+};
 
 export function useSocket(events?: Record<string, (data: any) => void>) {
   const socketRef = useRef<Socket | null>(null);
@@ -11,7 +19,7 @@ export function useSocket(events?: Record<string, (data: any) => void>) {
     const token = getToken();
     if (!token) return;
 
-    const socket = io(SOCKET_URL, {
+    const socket = io(getSocketUrl(), {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
