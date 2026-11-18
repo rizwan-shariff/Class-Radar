@@ -1,0 +1,33 @@
+﻿department,section,weekday,period,subject_code,faculty_email,room
+AIML,AIML-3B,1,1,1BCS302,veena.mohan@classradar.edu,Room 406
+AIML,AIML-3B,1,2,1BCS304,amruthashree.vm@classradar.edu,Room 406
+AIML,AIML-3B,1,3,1BCS303,goutham.naik@classradar.edu,Room 406
+AIML,AIML-3B,1,4,1BMAT301,darshan.ns@classradar.edu,Room 406
+AIML,AIML-3B,1,5,PROCTOR,veena.mohan@classradar.edu,Room 406
+AIML,AIML-3B,1,6,PROCTOR,veena.mohan@classradar.edu,Room 406
+AIML,AIML-3B,1,7,NSS_PE,manoj.sogi@classradar.edu,Room 406
+AIML,AIML-3B,2,1,1BETC306,manoj.sogi@classradar.edu,Room 406
+AIML,AIML-3B,2,2,1BCS304,amruthashree.vm@classradar.edu,Room 406
+AIML,AIML-3B,2,3,1BCS302,veena.mohan@classradar.edu,Room 406
+AIML,AIML-3B,2,4,1BCS305,sushma.mk@classradar.edu,Room 406
+AIML,AIML-3B,2,5,1BMAT301,darshan.ns@classradar.edu,Room 406
+AIML,AIML-3B,2,6,1BMAT301,darshan.ns@classradar.edu,Room 406
+AIML,AIML-3B,3,1,1BCS302,veena.mohan@classradar.edu,CS Lab 7 (DDCO)
+AIML,AIML-3B,3,2,1BPCCL308,amruthashree.vm@classradar.edu,IS Lab 2 (CDD/DSA)
+AIML,AIML-3B,3,3,1BCS303,goutham.naik@classradar.edu,Room 406
+AIML,AIML-3B,3,4,1BCS302,veena.mohan@classradar.edu,Room 406
+AIML,AIML-3B,3,5,1BCS305,sushma.mk@classradar.edu,Room 406
+AIML,AIML-3B,3,6,1BCS305,sushma.mk@classradar.edu,Room 406
+AIML,AIML-3B,3,7,NSS_PE,manoj.sogi@classradar.edu,Room 406
+AIML,AIML-3B,4,1,1BETC306,manoj.sogi@classradar.edu,CS Lab 5 (DAV)
+AIML,AIML-3B,4,2,1BCS303,goutham.naik@classradar.edu,IS Lab 2 (CDD/DSA)
+AIML,AIML-3B,4,3,1BCS304,amruthashree.vm@classradar.edu,Room 406
+AIML,AIML-3B,4,4,1BCS303,goutham.naik@classradar.edu,Room 406
+AIML,AIML-3B,4,5,1BCS302,veena.mohan@classradar.edu,CS Lab 7 (DDCO)
+AIML,AIML-3B,4,6,1BPCCL308,amruthashree.vm@classradar.edu,IS Lab 2 (CDD/DSA)
+AIML,AIML-3B,5,1,1BMAT301,darshan.ns@classradar.edu,Room 406
+AIML,AIML-3B,5,2,1BETC306,manoj.sogi@classradar.edu,Room 406
+AIML,AIML-3B,5,3,1BETC306,manoj.sogi@classradar.edu,CS Lab 5 (DAV)
+AIML,AIML-3B,5,4,1BCS303,goutham.naik@classradar.edu,IS Lab 2 (CDD/DSA)
+AIML,AIML-3B,5,5,1BCS305,sushma.mk@classradar.edu,Room 406
+AIML,AIML-3B,5,6,PROCTOR,veena.mohan@classradar.edu,Room 406
