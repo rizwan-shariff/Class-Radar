@@ -1,14 +1,47 @@
+import fs from 'fs';
+import path from 'path';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const DEMO_PASSWORD = 'classradar123';
+const DEFAULT_PASSWORD = 'admin123';
+
+function parseCsv(filePath: string): Record<string, string>[] {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  const headers = lines[0]!.split(',').map((h) => h.trim());
+  const rows: Record<string, string>[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values: string[] = [];
+    let cur = '';
+    let inQuotes = false;
+    for (const char of lines[i]!) {
+      if (char === '"') inQuotes = !inQuotes;
+      else if (char === ',' && !inQuotes) {
+        values.push(cur.trim());
+        cur = '';
+      } else {
+        cur += char;
+      }
+    }
+    values.push(cur.trim());
+
+    const rowObj: Record<string, string> = {};
+    headers.forEach((h, idx) => {
+      rowObj[h] = values[idx] || '';
+    });
+    rows.push(rowObj);
+  }
+  return rows;
+}
 
 const main = async (): Promise<void> => {
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
-  console.log('🧹 Purging all existing timetable, slots, bookings, sessions, and attendance...');
-  // Delete child records first to respect foreign key constraints
+  console.log('🧹 Purging all existing records in database...');
   await prisma.attendanceRecord.deleteMany();
   await prisma.attendanceSession.deleteMany();
   await prisma.substitution.deleteMany();
@@ -20,7 +53,7 @@ const main = async (): Promise<void> => {
   await prisma.room.deleteMany();
   await prisma.section.deleteMany();
 
-  console.log('🏛️ Creating official Section (Sem III, Sec F, Room 406)...');
+  console.log('🏛️ Creating official Section (CSE-3F)...');
   const section = await prisma.section.create({
     data: {
       name: 'CSE-3F',
@@ -49,17 +82,17 @@ const main = async (): Promise<void> => {
     roomsMap.set(r.name, created.id);
   }
 
-  console.log('📚 Creating official Subjects from image...');
+  console.log('📚 Creating official Subjects...');
   const subjectsData = [
-    { code: '1BMAT301', name: 'Applied Mathematics-III for CSE', short: 'MATHS' },
-    { code: '1BCS302', name: 'Digital Design and Computer Organization', short: 'DDCO' },
-    { code: '1BCS303', name: 'Collaborative Development and Devops', short: 'CDD' },
-    { code: '1BCS304', name: 'Data Structures and Applications', short: 'DSA' },
-    { code: '1BCS305', name: 'Object Oriented Programming with JAVA', short: 'OOPS JAVA' },
-    { code: '1BETC306', name: 'Data Analytics and Visualization', short: 'DAV' },
-    { code: '1BPCCL308', name: 'Data Structures Lab', short: 'DSA LAB' },
-    { code: 'PROCTOR', name: 'Proctor Interaction', short: 'Proctor Interaction' },
-    { code: 'NSS_PE', name: 'NSS / Physical Education', short: 'NSS/PE' },
+    { code: '1BMAT301', name: 'Applied Mathematics-III for CSE' },
+    { code: '1BCS302', name: 'Digital Design and Computer Organization' },
+    { code: '1BCS303', name: 'Collaborative Development and Devops' },
+    { code: '1BCS304', name: 'Data Structures and Applications' },
+    { code: '1BCS305', name: 'Object Oriented Programming with JAVA' },
+    { code: '1BETC306', name: 'Data Analytics and Visualization' },
+    { code: '1BPCCL308', name: 'Data Structures Lab' },
+    { code: 'PROCTOR', name: 'Proctor Interaction' },
+    { code: 'NSS_PE', name: 'NSS / Physical Education' },
   ];
 
   const subjectsMap = new Map<string, string>();
@@ -67,19 +100,19 @@ const main = async (): Promise<void> => {
     const created = await prisma.subject.create({
       data: { code: s.code, name: s.name },
     });
-    subjectsMap.set(s.short, created.id);
+    subjectsMap.set(s.code, created.id);
   }
 
-  console.log('👨‍🏫 Creating official Faculty members from image...');
+  console.log('👨‍🏫 Creating official Faculty members & Admin...');
   const facultyData = [
-    { name: 'Mr. Darshan N S', email: 'darshan.ns@classradar.edu', initial: 'DNS', dept: 'Mathematics' },
-    { name: 'Mrs. Veena Mohan', email: 'veena.mohan@classradar.edu', initial: 'VM', dept: 'CSE' },
-    { name: 'Mr. Goutham R Naik', email: 'goutham.naik@classradar.edu', initial: 'GRN', dept: 'CSE' },
-    { name: 'Mrs. Amruthashree V M', email: 'amruthashree.vm@classradar.edu', initial: 'AVM', dept: 'CSE' },
-    { name: 'Ms. Sushma M K', email: 'sushma.mk@classradar.edu', initial: 'SMK', dept: 'CSE' },
-    { name: 'Mr. Manoj N Sogi', email: 'manoj.sogi@classradar.edu', initial: 'MNS', dept: 'CSE' },
-    { name: 'Dr. M R Rashmi', email: 'mrrashmi@classradar.edu', initial: 'MRR', dept: 'CSE' },
-    { name: 'Mr. Vignesh R', email: 'vignesh.r@classradar.edu', initial: 'VR', dept: 'CSE' },
+    { name: 'Mr. Darshan N S', email: 'darshan.ns@classradar.edu', dept: 'Mathematics' },
+    { name: 'Mrs. Veena Mohan', email: 'veena.mohan@classradar.edu', dept: 'CSE' },
+    { name: 'Mr. Goutham R Naik', email: 'goutham.naik@classradar.edu', dept: 'CSE' },
+    { name: 'Mrs. Amruthashree V M', email: 'amruthashree.vm@classradar.edu', dept: 'CSE' },
+    { name: 'Ms. Sushma M K', email: 'sushma.mk@classradar.edu', dept: 'CSE' },
+    { name: 'Mr. Manoj N Sogi', email: 'manoj.sogi@classradar.edu', dept: 'CSE' },
+    { name: 'Dr. M R Rashmi', email: 'mrrashmi@classradar.edu', dept: 'CSE' },
+    { name: 'Mr. Vignesh R', email: 'vignesh.r@classradar.edu', dept: 'CSE' },
   ];
 
   const facultyMap = new Map<string, string>();
@@ -93,22 +126,10 @@ const main = async (): Promise<void> => {
         department: f.dept,
       },
     });
-    facultyMap.set(f.initial, created.id);
+    facultyMap.set(f.email, created.id);
   }
 
-  // Also create a demo faculty alias for quick login
-  await prisma.user.create({
-    data: {
-      name: 'Mrs. Veena Mohan (Faculty 1)',
-      email: 'faculty1@classradar.edu',
-      passwordHash,
-      role: 'FACULTY',
-      department: 'CSE',
-    },
-  });
-  facultyMap.set('FACULTY1_ALIAS', (await prisma.user.findUnique({ where: { email: 'faculty1@classradar.edu' } }))!.id);
-
-  console.log('🛡️ Creating Admin & 🎓 Student accounts...');
+  // Admin account
   await prisma.user.create({
     data: {
       name: 'ClassRadar Academic Admin',
@@ -119,185 +140,161 @@ const main = async (): Promise<void> => {
     },
   });
 
-  const studentUser = await prisma.user.create({
-    data: {
-      name: 'Shaik Zayan Ahmed',
-      email: 'student1@classradar.edu',
-      passwordHash,
-      role: 'STUDENT',
-      department: 'CSE',
-      sectionId: section.id,
-    },
-  });
-
-  // Additional section classmates
-  const classmates = [
-    'Mohammed Rizwan Shariff',
-    'Chirag Sharma',
-    'Ananya Patel',
-    'Deepak Reddy',
-    'Sneha Kulkarni',
+  console.log('🎓 Seeding all real CSE-3F students from CSV with USN...');
+  const possiblePaths = [
+    path.resolve(__dirname, '../../database'),
+    path.resolve(__dirname, '../database'),
+    path.resolve(__dirname, '../../../database'),
+    path.resolve(process.cwd(), 'database'),
+    path.resolve(process.cwd(), '../database'),
+    '/app/database',
   ];
-  for (let i = 0; i < classmates.length; i++) {
-    await prisma.user.create({
+  let databaseDir = possiblePaths.find((p) => fs.existsSync(path.join(p, 'CSE-3F-students.csv'))) || '/app/database';
+  console.log('Resolved databaseDir:', databaseDir);
+  const studentsCsvPath = path.join(databaseDir, 'CSE-3F-students.csv');
+  const studentRows = parseCsv(studentsCsvPath);
+
+  const studentsMapByEmail = new Map<string, string>();
+  for (const row of studentRows) {
+    const usn = row['USN']?.trim();
+    const name = row['Student Name']?.trim();
+    const email = row['Email']?.trim();
+
+    if (!email || !name) continue;
+
+    const created = await prisma.user.create({
       data: {
-        name: classmates[i]!,
-        email: `student${i + 2}@classradar.edu`,
+        name,
+        email,
+        usn: usn || null,
         passwordHash,
         role: 'STUDENT',
         department: 'CSE',
         sectionId: section.id,
       },
     });
+    studentsMapByEmail.set(email, created.id);
   }
+  console.log(`Created ${studentsMapByEmail.size} real CSE-3F students from CSV.`);
 
-  console.log('📅 Inserting Exact Real Weekly Timetable (Sem III, Sec F, Room 406)...');
+  console.log('📅 Inserting weekly timetable slots from database/CSE-3F.csv...');
+  const timetableCsvPath = path.join(databaseDir, 'CSE-3F.csv');
+  const timetableRows = parseCsv(timetableCsvPath);
 
-  // Helper to map period and time slot
-  // Period 1: 09:00 - 10:00 am
-  // Period 2: 10:00 - 11:00 am
-  // BREAK
-  // Period 3: 11:30 - 12:30 pm
-  // Period 4: 12:30 - 01:30 pm
-  // LUNCH
-  // Period 5: 02:30 - 03:30 pm
-  // Period 6: 03:30 - 04:30 pm
-  // Period 7: 04:30 - 05:00 pm
+  const slotLookup = new Map<string, string>(); // key: `${weekday}_${period}` -> slotId
+  for (const row of timetableRows) {
+    const weekday = parseInt(row['weekday'] || '0', 10);
+    const period = parseInt(row['period'] || '0', 10);
+    const subjectCode = row['subject_code']?.trim();
+    const facultyEmail = row['faculty_email']?.trim();
+    const roomName = row['room']?.trim();
 
-  const defaultRoomId = roomsMap.get('Room 406')!;
-  const ddcoLabRoomId = roomsMap.get('CS Lab 7 (DDCO)')!;
-  const davLabRoomId = roomsMap.get('CS Lab 5 (DAV)')!;
-  const cddLabRoomId = roomsMap.get('IS Lab 2 (CDD/DSA)')!;
+    const subjectId = subjectsMap.get(subjectCode);
+    const facultyId = facultyEmail ? facultyMap.get(facultyEmail) : null;
+    const roomId = roomsMap.get(roomName) || roomsMap.get('Room 406')!;
 
-  interface SlotDef {
-    weekday: number; // 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri
-    period: number;
-    subjectShort: string;
-    facultyInitial: string;
-    roomId?: string;
-  }
-
-  const weeklySchedule: SlotDef[] = [
-    // ----------------- MONDAY (weekday: 1) -----------------
-    { weekday: 1, period: 1, subjectShort: 'DDCO', facultyInitial: 'VM' },
-    { weekday: 1, period: 2, subjectShort: 'DSA', facultyInitial: 'AVM' },
-    { weekday: 1, period: 3, subjectShort: 'CDD', facultyInitial: 'GRN' },
-    { weekday: 1, period: 4, subjectShort: 'MATHS', facultyInitial: 'DNS' },
-    { weekday: 1, period: 5, subjectShort: 'Proctor Interaction', facultyInitial: 'VM' },
-    { weekday: 1, period: 6, subjectShort: 'Proctor Interaction', facultyInitial: 'VM' },
-    { weekday: 1, period: 7, subjectShort: 'NSS/PE', facultyInitial: 'MNS' },
-
-    // ----------------- TUESDAY (weekday: 2) -----------------
-    { weekday: 2, period: 1, subjectShort: 'DAV', facultyInitial: 'MNS' },
-    { weekday: 2, period: 2, subjectShort: 'DSA', facultyInitial: 'AVM' },
-    { weekday: 2, period: 3, subjectShort: 'DDCO', facultyInitial: 'VM' },
-    { weekday: 2, period: 4, subjectShort: 'OOPS JAVA', facultyInitial: 'SMK' },
-    { weekday: 2, period: 5, subjectShort: 'MATHS', facultyInitial: 'DNS' }, // MATHS TUTORIAL
-    { weekday: 2, period: 6, subjectShort: 'MATHS', facultyInitial: 'DNS' }, // MATHS TUTORIAL
-
-    // ----------------- WEDNESDAY (weekday: 3) -----------------
-    // 09:00 - 11:00 am: DDCO / DSA Lab
-    { weekday: 3, period: 1, subjectShort: 'DDCO', facultyInitial: 'VM', roomId: ddcoLabRoomId },
-    { weekday: 3, period: 2, subjectShort: 'DSA LAB', facultyInitial: 'AVM', roomId: cddLabRoomId },
-    { weekday: 3, period: 3, subjectShort: 'CDD', facultyInitial: 'GRN' },
-    { weekday: 3, period: 4, subjectShort: 'DDCO', facultyInitial: 'VM' },
-    { weekday: 3, period: 5, subjectShort: 'OOPS JAVA', facultyInitial: 'SMK' }, // OOPS JAVA TUTORIAL
-    { weekday: 3, period: 6, subjectShort: 'OOPS JAVA', facultyInitial: 'SMK' }, // OOPS JAVA TUTORIAL
-    { weekday: 3, period: 7, subjectShort: 'NSS/PE', facultyInitial: 'MNS' },
-
-    // ----------------- THURSDAY (weekday: 4) -----------------
-    // 09:00 - 11:00 am: DAV / CDD Lab
-    { weekday: 4, period: 1, subjectShort: 'DAV', facultyInitial: 'MNS', roomId: davLabRoomId },
-    { weekday: 4, period: 2, subjectShort: 'CDD', facultyInitial: 'GRN', roomId: cddLabRoomId },
-    { weekday: 4, period: 3, subjectShort: 'DSA', facultyInitial: 'AVM' },
-    { weekday: 4, period: 4, subjectShort: 'CDD', facultyInitial: 'GRN' },
-    // 02:30 - 04:30 pm: DDCO / DSA Lab
-    { weekday: 4, period: 5, subjectShort: 'DDCO', facultyInitial: 'VM', roomId: ddcoLabRoomId },
-    { weekday: 4, period: 6, subjectShort: 'DSA LAB', facultyInitial: 'AVM', roomId: cddLabRoomId },
-
-    // ----------------- FRIDAY (weekday: 5) -----------------
-    { weekday: 5, period: 1, subjectShort: 'MATHS', facultyInitial: 'DNS' },
-    { weekday: 5, period: 2, subjectShort: 'DAV', facultyInitial: 'MNS' },
-    // 11:30 - 01:30 pm: DAV / CDD Lab
-    { weekday: 5, period: 3, subjectShort: 'DAV', facultyInitial: 'MNS', roomId: davLabRoomId },
-    { weekday: 5, period: 4, subjectShort: 'CDD', facultyInitial: 'GRN', roomId: cddLabRoomId },
-    { weekday: 5, period: 5, subjectShort: 'OOPS JAVA', facultyInitial: 'SMK' },
-    { weekday: 5, period: 6, subjectShort: 'Proctor Interaction', facultyInitial: 'VM' },
-  ];
-
-  for (const s of weeklySchedule) {
-    const subjectId = subjectsMap.get(s.subjectShort);
-    const facultyId = facultyMap.get(s.facultyInitial);
-    const roomId = s.roomId || defaultRoomId;
-
-    if (!subjectId || !facultyId) {
-      console.warn(`Could not resolve slot: ${s.subjectShort} / ${s.facultyInitial}`);
+    if (!subjectId) {
+      console.warn(`Skipping slot: missing subjectId for ${subjectCode}`);
       continue;
     }
 
-    await prisma.slot.create({
+    const createdSlot = await prisma.slot.create({
       data: {
         sectionId: section.id,
-        weekday: s.weekday,
-        period: s.period,
+        weekday,
+        period,
         subjectId,
-        facultyId,
+        facultyId: facultyId || null,
         roomId,
       },
     });
+    slotLookup.set(`${weekday}_${period}`, createdSlot.id);
+  }
+  console.log(`Created ${slotLookup.size} weekly slots for CSE-3F.`);
+
+  console.log('📊 Seeding realistic Attendance Sessions from database/CSE-3F-mock-attendance.csv...');
+  const attendanceCsvPath = path.join(databaseDir, 'CSE-3F-mock-attendance.csv');
+  let attendanceRows: Record<string, string>[] = [];
+  if (fs.existsSync(attendanceCsvPath)) {
+    attendanceRows = parseCsv(attendanceCsvPath);
+    console.log(`Loaded ${attendanceRows.length} attendance rows from CSV.`);
   }
 
-  console.log('📊 Seeding realistic Attendance Sessions & Historical Records for Heatmap and Analytics...');
-  const allSlots = await prisma.slot.findMany({ include: { subject: true, faculty: true } });
-  const allStudents = await prisma.user.findMany({ where: { role: 'STUDENT' } });
+  if (attendanceRows.length > 0) {
+    // Group records by session key: `${date}_${weekday}_${period}`
+    const sessionGroups = new Map<string, {
+      date: string;
+      weekday: number;
+      period: number;
+      subjectCode: string;
+      records: Array<{ studentEmail: string; status: string }>;
+    }>();
 
-  // Generate 20 historical sessions across September - November 2026
-  const baseDate = new Date(2026, 8, 1); // Sept 1, 2026
-  for (let d = 0; d < 35; d++) {
-    const curDate = new Date(baseDate);
-    curDate.setDate(baseDate.getDate() + d);
-    const dayOfWeek = curDate.getDay(); // 0 = Sun, 6 = Sat
-    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+    for (const r of attendanceRows) {
+      const date = r['date']?.trim();
+      const weekday = parseInt(r['weekday'] || '0', 10);
+      const period = parseInt(r['period'] || '0', 10);
+      const subjectCode = r['subject_code']?.trim();
+      const studentEmail = r['student_email']?.trim();
+      const status = r['status']?.trim() === 'ABSENT' ? 'ABSENT' : 'PRESENT';
 
-    // Pick 1-2 slots for that weekday
-    const daySlots = allSlots.filter((sl) => sl.weekday === dayOfWeek);
-    for (const targetSlot of daySlots.slice(0, 2)) {
-      const sess = await prisma.attendanceSession.create({
+      if (!date || !weekday || !period || !studentEmail) continue;
+
+      const key = `${date}_${weekday}_${period}`;
+      const group = sessionGroups.get(key) || {
+        date,
+        weekday,
+        period,
+        subjectCode,
+        records: [],
+      };
+      group.records.push({ studentEmail, status });
+      sessionGroups.set(key, group);
+    }
+
+    console.log(`Creating ${sessionGroups.size} attendance sessions from CSV...`);
+    for (const [key, group] of sessionGroups.entries()) {
+      const slotId = slotLookup.get(`${group.weekday}_${group.period}`);
+      if (!slotId) continue;
+
+      const slot = await prisma.slot.findUnique({ where: { id: slotId } });
+      if (!slot) continue;
+
+      const sessionDate = new Date(group.date);
+      const session = await prisma.attendanceSession.create({
         data: {
-          slotId: targetSlot.id,
-          date: curDate,
-          startedById: targetSlot.facultyId,
+          slotId: slot.id,
+          date: sessionDate,
+          startedById: slot.facultyId || (await prisma.user.findFirst({ where: { role: 'ADMIN' } }))!.id,
           status: 'CLOSED',
-          startedAt: curDate,
-          closedAt: new Date(curDate.getTime() + 50 * 60 * 1000),
+          startedAt: sessionDate,
+          closedAt: new Date(sessionDate.getTime() + 50 * 60 * 1000),
         },
       });
 
-      // Mark records for students with realistic ~80-90% attendance
-      for (const st of allStudents) {
-        const hash = (st.name.charCodeAt(0) + d * 17) % 100;
-        const isPresent = hash < 85;
-        if (isPresent) {
+      for (const rec of group.records) {
+        const studentId = studentsMapByEmail.get(rec.studentEmail);
+        if (!studentId) continue;
+
+        try {
           await prisma.attendanceRecord.create({
             data: {
-              sessionId: sess.id,
-              studentId: st.id,
-              status: 'PRESENT',
-              method: 'SCAN',
-              markedAt: new Date(curDate.getTime() + 5 * 60 * 1000),
+              sessionId: session.id,
+              studentId,
+              status: rec.status,
+              method: rec.status === 'PRESENT' ? 'SCAN' : 'SYSTEM',
+              markedAt: new Date(sessionDate.getTime() + 10 * 60 * 1000),
             },
           });
+        } catch {
+          // ignore any duplicate
         }
       }
     }
   }
 
-  console.log('✅ Successfully loaded real Class timetable & attendance records (Sem III, Sec F, Room 406)!');
-  console.log('Login credentials:');
-  console.log('  Student: student1@classradar.edu / classradar123 (Shaik Zayan Ahmed - Sec F)');
-  console.log('  Faculty: veena.mohan@classradar.edu / classradar123 (Mrs. Veena Mohan - DDCO)');
-  console.log('           faculty1@classradar.edu    / classradar123 (Quick login alias)');
-  console.log('  Admin:   admin@classradar.edu       / classradar123');
+  console.log('✅ SQLite database successfully populated with real CSE-3F data!');
+  console.log(`All accounts created with password: "${DEFAULT_PASSWORD}"`);
 };
 
 main()

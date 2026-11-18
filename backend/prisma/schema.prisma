@@ -43,6 +43,7 @@ model User {
   id               String   @id @default(uuid())
   name             String
   email            String   @unique
+  usn              String?  @unique
   passwordHash     String
   role             Role
   department       String?
@@ -90,21 +91,20 @@ model Slot {
   id         String   @id @default(uuid())
   sectionId  String
   subjectId  String
-  facultyId  String
+  facultyId  String?
   roomId     String
   weekday    Int
   period     Int
 
   section    Section  @relation(fields: [sectionId], references: [id])
   subject    Subject  @relation(fields: [subjectId], references: [id])
-  faculty    User     @relation(fields: [facultyId], references: [id])
+  faculty    User?    @relation(fields: [facultyId], references: [id])
   room       Room     @relation(fields: [roomId], references: [id])
   
   substitutions Substitution[]
   sessions      AttendanceSession[]
 
   @@unique([sectionId, weekday, period])
-  @@unique([facultyId, weekday, period])
   @@unique([roomId, weekday, period])
 }
 

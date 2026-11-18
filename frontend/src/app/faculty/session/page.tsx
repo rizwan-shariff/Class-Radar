@@ -34,6 +34,26 @@ function SessionContent() {
   const [isClosed, setIsClosed] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const [verifiedStudents, setVerifiedStudents] = useState<Array<{
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    markedAt: string;
+  }>>([]);
+
+  // Fetch initial records when session loads
+  const loadExistingRecords = async (sid: string) => {
+    try {
+      const records = await api.attendance.getSessionRecords(sid);
+      if (records && Array.isArray(records)) {
+        setVerifiedStudents(records);
+        setPresentCount(records.length);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   // Initialize or start session
   useEffect(() => {
     async function start() {
@@ -45,6 +65,7 @@ function SessionContent() {
         if (session && session.id) {
           setSessionId(session.id);
           fetchToken(session.id);
+          loadExistingRecords(session.id);
         }
       } catch (err: any) {
         // Fallback live rotating mock token
@@ -75,9 +96,16 @@ function SessionContent() {
     }
   };
 
-  // 10-second countdown ticker
+  // 10-second countdown ticker & auto-poll fallback for student verified records
   useEffect(() => {
     if (isClosed) return;
+
+    // Periodically poll DB for latest session turnout in case WebSocket connection pauses
+    const pollInterval = setInterval(() => {
+      if (sessionId && sessionId !== 'session-live-01') {
+        loadExistingRecords(sessionId);
+      }
+    }, 2500);
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -93,13 +121,31 @@ function SessionContent() {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      clearInterval(pollInterval);
+    };
   }, [sessionId, isClosed]);
 
-  // Real-time live attendance scan counter
+  // Real-time live attendance scan counter & live student feed
   const { joinSession } = useSocket({
     'attendance:marked': (payload: any) => {
       setPresentCount((prev) => Math.min(totalCount, prev + 1));
+      if (payload) {
+        setVerifiedStudents((prev) => {
+          const exists = prev.some((s) => s.studentId === payload.studentId);
+          if (exists) return prev;
+          return [
+            {
+              studentId: payload.studentId,
+              studentName: payload.studentName || 'Verified Student',
+              studentEmail: payload.studentEmail || '',
+              markedAt: payload.markedAt || new Date().toISOString(),
+            },
+            ...prev,
+          ];
+        });
+      }
     },
   });
 
@@ -202,12 +248,12 @@ function SessionContent() {
           ) : (
             <div className="space-y-6 w-full flex flex-col items-center">
               {/* Dynamic Rotating QR Mount */}
-              <div className="p-6 bg-white rounded-3xl border-2 border-[#6C5939]/30 shadow-xl relative group">
+              <div className="p-8 bg-white rounded-3xl border-2 border-[#6C5939]/30 shadow-xl relative group">
                 <QRCodeSVG
                   value={token}
-                  size={260}
-                  level="H"
-                  includeMargin={false}
+                  size={320}
+                  level="M"
+                  includeMargin={true}
                 />
 
                 {/* Live pulse overlay */}
@@ -278,6 +324,47 @@ function SessionContent() {
                 className="h-full rounded-full bg-[#6C5939] transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(4, (presentCount / (totalCount || 1)) * 100))}%` }}
               />
+            </div>
+
+            {/* Live Student Verified Activity List */}
+            <div className="pt-2 border-t border-[#CFC5B8]/40 space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-bold text-[#1B1C19]">
+                <span className="flex items-center gap-1.5 text-[#86724F]">
+                  <CheckCircle2 className="w-4 h-4 text-[#30A46C]" />
+                  <span>Live Verified Students</span>
+                </span>
+                <span className="text-[11px] font-semibold text-[#7E766B]">
+                  {verifiedStudents.length} Checked In
+                </span>
+              </div>
+
+              {verifiedStudents.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-[#F0EEE9]/60 text-center text-xs text-[#7E766B] border border-dashed border-[#CFC5B8]/60">
+                  Waiting for students to scan the live QR beacon...
+                </div>
+              ) : (
+                <div className="max-h-56 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {verifiedStudents.map((s, idx) => (
+                    <div
+                      key={s.studentId || idx}
+                      className="p-2.5 rounded-xl bg-white border border-[#CFC5B8]/60 flex items-center justify-between shadow-xs animate-in slide-in-from-top-2 duration-300"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-full bg-[#E7DFD1] text-[#6C5939] font-bold text-xs flex items-center justify-center shrink-0">
+                          {s.studentName.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-[#1B1C19] truncate">{s.studentName}</p>
+                          <p className="text-[10px] text-[#7E766B] truncate">{s.studentEmail}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-[#30A46C] font-semibold shrink-0 ml-2">
+                        {new Date(s.markedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

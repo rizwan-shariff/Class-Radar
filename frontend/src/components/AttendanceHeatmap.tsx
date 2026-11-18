@@ -30,6 +30,8 @@ const PERIOD_SLOTS: Record<number, string> = {
   7: '04:30 - 05:00 PM',
 };
 
+type DayStatus = 'PRESENT' | 'ABSENT' | 'NOT_LOGGED';
+
 export function AttendanceHeatmap({
   studentName,
   records,
@@ -40,7 +42,7 @@ export function AttendanceHeatmap({
     dayIndex: number;
     date: string;
     fullDate: string;
-    isPresent: boolean;
+    status: DayStatus;
     weekday: string;
     periodSlot: string;
     timeRange: string;
@@ -49,11 +51,11 @@ export function AttendanceHeatmap({
     y: number;
   } | null>(null);
 
-  // Generate 60-day calendar boxes directly hydrated by real records when supplied
+  // Generate weekday-only boxes (Monday - Friday) directly hydrated by real records
   const boxes = React.useMemo(() => {
     const list = [];
     const seed = (studentName || 'seed').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    
+
     // Group real records by formatted date (e.g. YYYY-MM-DD)
     const recordsByDay = new Map<string, HeatmapRecord[]>();
     if (records && records.length > 0) {
@@ -69,69 +71,111 @@ export function AttendanceHeatmap({
     }
 
     const hasRealRecords = recordsByDay.size > 0;
-    const baseDate = new Date(2026, 8, 1); // Start Sept 1, 2026
+    // Set base date to start of Semester III (Monday, August 10, 2026)
+    const baseDate = new Date(2026, 7, 10); // Aug 10, 2026
 
-    for (let i = 0; i < totalDays; i++) {
+    let addedWorkingDays = 0;
+    let dayOffset = 0;
+
+    // Collect totalDays of working weekdays only (Monday through Friday)
+    while (addedWorkingDays < totalDays) {
       const curDate = new Date(baseDate);
-      curDate.setDate(baseDate.getDate() + i);
+      curDate.setDate(baseDate.getDate() + dayOffset);
+      dayOffset++;
+
+      const dayOfWeek = curDate.getDay(); // 0 = Sunday, 6 = Saturday
+      // Exclude Saturday and Sunday completely from the heatmap
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        continue;
+      }
+
       const isoKey = curDate.toISOString().split('T')[0]!;
       const dayMatches = recordsByDay.get(isoKey);
 
-      let isPresent = false;
-      let periodNum = ((seed + i) % 7) + 1;
+      let status: DayStatus = 'NOT_LOGGED';
+      let periodNum = ((seed + addedWorkingDays) % 7) + 1;
       let subjectCode: string | undefined = undefined;
 
       if (hasRealRecords) {
         if (dayMatches && dayMatches.length > 0) {
-          const verified = dayMatches.find((m) => m.status === 'PRESENT') || dayMatches[0]!;
-          isPresent = verified.status === 'PRESENT';
-          if (verified.period) periodNum = verified.period;
-          if (verified.subjectCode) subjectCode = verified.subjectCode;
+          const hasPresent = dayMatches.some((m) => m.status === 'PRESENT');
+          const hasAbsent = dayMatches.some((m) => m.status === 'ABSENT');
+
+          if (hasPresent) {
+            status = 'PRESENT';
+            const verified = dayMatches.find((m) => m.status === 'PRESENT')!;
+            if (verified.period) periodNum = verified.period;
+            if (verified.subjectCode) subjectCode = verified.subjectCode;
+          } else if (hasAbsent) {
+            status = 'ABSENT';
+            const absentRec = dayMatches.find((m) => m.status === 'ABSENT')!;
+            if (absentRec.period) periodNum = absentRec.period;
+            if (absentRec.subjectCode) subjectCode = absentRec.subjectCode;
+          } else {
+            status = 'NOT_LOGGED';
+          }
         } else {
-          // Weekend or no recorded session
-          isPresent = false;
+          // Working weekday with no recorded lecture session for this subject
+          status = 'NOT_LOGGED';
         }
       } else {
         // Fallback simulation when no live database records exist yet
-        const val = ((seed * (i + 13) * 31) % 100);
-        const isClassDay = (i % 7) !== 0 && (i % 7) !== 6;
+        const val = ((seed * (addedWorkingDays + 13) * 31) % 100);
         const targetRatio = attendedCount ? attendedCount / totalDays : 0.8;
-        isPresent = isClassDay && (val < targetRatio * 115);
+        if (val < targetRatio * 100) {
+          status = 'PRESENT';
+        } else if (val < targetRatio * 125) {
+          status = 'ABSENT';
+        } else {
+          status = 'NOT_LOGGED';
+        }
       }
 
       const timeRange = PERIOD_SLOTS[periodNum] || '09:00 - 10:00 AM';
 
       list.push({
-        dayIndex: i,
+        dayIndex: addedWorkingDays,
         date: curDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        fullDate: curDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+        fullDate: curDate.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
         weekday: curDate.toLocaleDateString('en-US', { weekday: 'long' }),
         periodSlot: `Period ${periodNum}`,
         timeRange,
         subjectCode,
-        isPresent,
+        status,
       });
+
+      addedWorkingDays++;
     }
     return list;
   }, [studentName, records, totalDays, attendedCount]);
 
-  const presentTotal = boxes.filter((b) => b.isPresent).length;
-  const attendanceRate = Math.round((presentTotal / totalDays) * 100);
+  const presentTotal = boxes.filter((b) => b.status === 'PRESENT').length;
+  const absentTotal = boxes.filter((b) => b.status === 'ABSENT').length;
+  const sessionsHeldTotal = boxes.filter((b) => b.status === 'PRESENT' || b.status === 'ABSENT').length;
+  const attendanceRate = sessionsHeldTotal > 0 ? Math.round((presentTotal / sessionsHeldTotal) * 100) : 100;
 
   return (
     <div className="space-y-3 relative">
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1.5 font-bold text-[#1B1C19]">
           <span className="w-2 h-2 rounded-full bg-[#30A46C] animate-pulse" />
-          <span>Activity & Consistency Map</span>
+          <span>Activity & Consistency Map (Mon – Fri)</span>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-[#7E766B]">
-          <span>Less</span>
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#EFECE6] dark:bg-[#2D3037] border border-[#DDD7CD] dark:border-[#4B5563]" />
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#A0DBB5]" />
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#46A758]" />
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#297C3B]" />
-          <span>More</span>
+        <div className="flex items-center gap-2.5 text-[11px] text-[#7E766B]">
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-[#30A46C]" /> Present
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-[#E5484D]" /> Absent
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-[#F0EEE9] dark:bg-[#2B2E36] border border-[#DDD7CD] dark:border-[#3E424C]" /> No Class Scheduled
+          </span>
         </div>
       </div>
 
@@ -139,12 +183,18 @@ export function AttendanceHeatmap({
       <div className="relative p-3.5 rounded-2xl bg-[#FCFBF9] dark:bg-[#1D1E23] border border-[#E7DFD1] dark:border-[#374151] shadow-inner">
         <div className="flex flex-wrap gap-1.5">
           {boxes.map((box, idx) => {
-            let bgClass = 'bg-[#EFECE6] dark:bg-[#2B2E36] border-[#DDD7CD] dark:border-[#3E424C] hover:border-[#6C5939] dark:hover:border-[#60A5FA]';
-            if (box.isPresent) {
+            let bgClass = 'bg-[#F0EEE9] dark:bg-[#2B2E36] border-[#DDD7CD] dark:border-[#3E424C] hover:border-[#6C5939]';
+
+            if (box.status === 'PRESENT') {
               const shade = (idx % 3);
               if (shade === 0) bgClass = 'bg-[#30A46C] border-[#297C3B]';
               else if (shade === 1) bgClass = 'bg-[#46A758] border-[#3e934e]';
               else bgClass = 'bg-[#297C3B] border-[#1f5e2d]';
+            } else if (box.status === 'ABSENT') {
+              bgClass = 'bg-[#E5484D] border-[#CD2B31] shadow-sm';
+            } else {
+              // NOT_LOGGED / No Class Scheduled on this weekday
+              bgClass = 'bg-[#F4F2EE] dark:bg-[#26282E] border-[#E2DDD5] dark:border-[#353942]';
             }
 
             return (
@@ -179,11 +229,27 @@ export function AttendanceHeatmap({
               <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-bold tracking-wider">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    hoveredBox.isPresent ? 'bg-[#34D399] animate-pulse' : 'bg-[#F87171]'
+                    hoveredBox.status === 'PRESENT'
+                      ? 'bg-[#34D399] animate-pulse'
+                      : hoveredBox.status === 'ABSENT'
+                      ? 'bg-[#F87171] animate-pulse'
+                      : 'bg-[#9CA3AF]'
                   }`}
                 />
-                <span className={hoveredBox.isPresent ? 'text-[#34D399]' : 'text-[#FCA5A5]'}>
-                  {hoveredBox.isPresent ? 'Present (Verified)' : 'Absent / Not Logged'}
+                <span
+                  className={
+                    hoveredBox.status === 'PRESENT'
+                      ? 'text-[#34D399]'
+                      : hoveredBox.status === 'ABSENT'
+                      ? 'text-[#F87171]'
+                      : 'text-[#D1D5DB]'
+                  }
+                >
+                  {hoveredBox.status === 'PRESENT'
+                    ? 'Present (Verified)'
+                    : hoveredBox.status === 'ABSENT'
+                    ? 'Absent (Null / Missed)'
+                    : 'No Session Scheduled'}
                 </span>
               </div>
 
@@ -212,7 +278,7 @@ export function AttendanceHeatmap({
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-[#7E766B] px-1">
-        <span>{presentTotal} of {totalDays} sessions logged</span>
+        <span>{presentTotal} Present · {absentTotal} Absent ({sessionsHeldTotal} classes conducted)</span>
         <span className="font-semibold text-[#1B1C19]">{attendanceRate}% active presence</span>
       </div>
     </div>

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, BunkSummaryItem } from '@/lib/api';
+import { useSocket } from '@/lib/useSocket';
 import { AttendanceHeatmap } from '@/components/AttendanceHeatmap';
 import {
   AlertTriangle,
@@ -22,6 +23,19 @@ import Link from 'next/link';
 
 export default function StudentAttendancePage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Invalidate queries in real-time when attendance is marked or finalized
+  useSocket({
+    'attendance:finalized': () => {
+      queryClient.invalidateQueries({ queryKey: ['student-attendance-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['student-attendance-history'] });
+    },
+    'attendance:marked': () => {
+      queryClient.invalidateQueries({ queryKey: ['student-attendance-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['student-attendance-history'] });
+    },
+  });
 
   const { data: summary, isLoading, error } = useQuery<BunkSummaryItem[]>({
     queryKey: ['student-attendance-summary'],

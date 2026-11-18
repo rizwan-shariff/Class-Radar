@@ -6,10 +6,15 @@
 const getApiBase = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+    // If accessing through Cloudflare tunnel, use env or relative fallback
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
     // If accessing from mobile/LAN IP or domain, use the current host with port 3000
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `${window.location.protocol}//${hostname}:3000/api/v1`;
     }
+    return `${window.location.origin}/api/v1`;
   }
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 };
@@ -245,6 +250,10 @@ export const api = {
       request<{ success: boolean }>(`/attendance/sessions/${sessionId}/close`, {
         method: 'POST',
       }),
+    getSessionRecords: (sessionId: string) =>
+      request<Array<{ studentId: string; studentName: string; studentEmail: string; markedAt: string; method: string }>>(
+        `/attendance/sessions/${sessionId}/records`
+      ),
     getToken: (sessionId: string) =>
       request<{ token: string; expiresAt: string }>(`/attendance/sessions/${sessionId}/token`),
     scan: (token: string) =>
@@ -273,6 +282,31 @@ export const api = {
       }>('/attendance/active-session'),
     studentHistory: (subjectId?: string) =>
       request<any[]>(subjectId ? `/attendance/student-history?subjectId=${subjectId}` : '/attendance/student-history'),
+    getFacultySessionsHistory: () =>
+      request<
+        Array<{
+          sessionId: string;
+          status: string;
+          date: string;
+          startedAt: string;
+          closedAt?: string;
+          period?: number;
+          subjectCode: string;
+          subjectName: string;
+          roomName: string;
+          sectionName: string;
+          totalVerified: number;
+          totalAbsent: number;
+          records: Array<{
+            studentId: string;
+            studentName: string;
+            studentEmail: string;
+            status: string;
+            method: string;
+            markedAt: string;
+          }>;
+        }>
+      >('/attendance/faculty/sessions-history'),
     facultyMatrix: () =>
       request<
         Array<{

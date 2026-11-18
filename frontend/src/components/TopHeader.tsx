@@ -19,7 +19,8 @@ import {
   UploadCloud,
   ChevronRight,
   Shield,
-  Sparkles
+  Sparkles,
+  History
 } from 'lucide-react';
 
 export function TopHeader() {
@@ -47,6 +48,7 @@ export function TopHeader() {
     desktopNav = [
       { label: "Teaching Schedule", href: '/faculty', icon: <Calendar className="w-4 h-4" /> },
       { label: 'QR Attendance Session', href: '/faculty/session', icon: <QrCode className="w-4 h-4" /> },
+      { label: 'Attendance History', href: '/faculty/history', icon: <History className="w-4 h-4" /> },
       { label: 'Free Room Finder', href: '/rooms', icon: <Search className="w-4 h-4" /> },
     ];
   } else if (user.role === 'ADMIN') {

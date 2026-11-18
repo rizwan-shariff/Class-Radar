@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, UserCheck, Search, QrCode, BookOpen, Layers, BarChart3, Inbox } from 'lucide-react';
+import { Calendar, UserCheck, Search, QrCode, BookOpen, Layers, BarChart3, Inbox, History } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export function BottomNav() {
@@ -34,6 +34,7 @@ export function BottomNav() {
     items = [
       { label: 'Schedule', href: '/faculty', icon: <Calendar className="w-5 h-5" /> },
       { label: 'QR Session', href: '/faculty/session', icon: <QrCode className="w-5 h-5" /> },
+      { label: 'History', href: '/faculty/history', icon: <History className="w-5 h-5" /> },
       { label: 'Free Rooms', href: '/rooms', icon: <Search className="w-5 h-5" /> },
     ];
   } else if (user.role === 'ADMIN') {

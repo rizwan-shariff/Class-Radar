@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, Slot } from '@/lib/api';
+import { useSocket } from '@/lib/useSocket';
 import { AttendanceHeatmap } from '@/components/AttendanceHeatmap';
 import {
   Calendar,
@@ -22,7 +23,9 @@ import {
   LayoutGrid,
   ChevronDown,
   ChevronUp,
-  UserCheck
+  UserCheck,
+  History,
+  FileSpreadsheet
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -33,6 +36,20 @@ export default function FacultyDashboardPage() {
   const [absentReason, setAbsentReason] = useState('');
   const [absentSuccess, setAbsentSuccess] = useState(false);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+
+  // Invalidate and refetch matrix & history immediately when a session is finalized or marked
+  useSocket({
+    'attendance:finalized': () => {
+      queryClient.invalidateQueries({ queryKey: ['faculty-student-matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['faculty-sessions-history'] });
+    },
+    'attendance:marked': () => {
+      queryClient.invalidateQueries({ queryKey: ['faculty-student-matrix'] });
+    },
+  });
 
   const { data: slots, isLoading, refetch } = useQuery<Slot[]>({
     queryKey: ['faculty-schedule', selectedDate],
@@ -42,6 +59,11 @@ export default function FacultyDashboardPage() {
   const { data: studentMatrix, isLoading: isMatrixLoading } = useQuery({
     queryKey: ['faculty-student-matrix'],
     queryFn: () => api.attendance.facultyMatrix(),
+  });
+
+  const { data: pastSessions, isLoading: isPastSessionsLoading } = useQuery({
+    queryKey: ['faculty-sessions-history'],
+    queryFn: () => api.attendance.getFacultySessionsHistory(),
   });
 
   const handleTogglePeriod = (period: number) => {
@@ -289,15 +311,25 @@ export default function FacultyDashboardPage() {
       {/* Student Attendance Matrix & Activity Heatmap Section */}
       <section className="space-y-4 pt-4 border-t border-[#CFC5B8]/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-[#86724F]" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F]">
-              Enrolled Class Attendance & Heatmap Analytics (Sem: III, Sec: 'F')
-            </h2>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-[#86724F]" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F]">
+                Enrolled Class Attendance & Heatmap Analytics (Sem: III, Sec: 'F')
+              </h2>
+            </div>
+            <p className="text-xs text-[#7E766B]">
+              Sorted by lowest attendance first to highlight students at risk of falling below the 75% institutional threshold.
+            </p>
           </div>
-          <span className="text-xs text-[#7E766B]">
-            LeetCode & GitHub Style Activity Presence
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-[#BA1A1A] bg-[#FFDAD6] px-2.5 py-1 rounded-xl">
+              {studentMatrix?.filter((s: any) => s.percentage < 75).length || 0} Below 75%
+            </span>
+            <span className="text-[11px] font-bold text-[#30A46C] bg-[#E7F6ED] px-2.5 py-1 rounded-xl">
+              {studentMatrix?.filter((s: any) => s.percentage >= 75).length || 0} Compliant
+            </span>
+          </div>
         </div>
 
         {isMatrixLoading ? (
@@ -329,12 +361,17 @@ export default function FacultyDashboardPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="text-sm font-bold text-[#1B1C19]">{st.studentName}</h4>
+                          {st.usn && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#F0EEE9] text-[#4C463C] border border-[#CFC5B8]/60 font-semibold">
+                              {st.usn}
+                            </span>
+                          )}
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              isSafe ? 'bg-[#E7DFD1] text-[#6C5939]' : 'bg-[#FFDAD6] text-[#93000A]'
+                              isSafe ? 'bg-[#E7DFD1] text-[#6C5939]' : 'bg-[#FFDAD6] text-[#93000A] animate-pulse font-extrabold'
                             }`}
                           >
-                            {st.percentage}%
+                            {st.percentage}% {isSafe ? 'Compliant' : 'Shortage'}
                           </span>
                         </div>
                         <p className="text-xs text-[#7E766B]">{st.studentEmail}</p>
@@ -371,6 +408,174 @@ export default function FacultyDashboardPage() {
                         totalDays={60}
                         attendedCount={st.attended}
                       />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Past Attendance Sessions & Verification Records History */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="space-y-1">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F] flex items-center gap-2">
+              <History className="w-4 h-4" />
+              <span>Past Attendance Records & Finalized Sessions</span>
+            </h2>
+            <p className="text-xs text-[#7E766B]">
+              Historical log of conducted sessions, verified student scans, and absent rosters.
+            </p>
+          </div>
+          <span className="text-[11px] font-bold text-[#86724F] bg-[#F0EEE9] px-3 py-1 rounded-full border border-[#CFC5B8]/60 self-start sm:self-auto">
+            {pastSessions?.length || 0} Sessions Archived
+          </span>
+        </div>
+
+        {isPastSessionsLoading ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-24 rounded-3xl bg-[#F0EEE9]/70 animate-pulse border border-[#CFC5B8]/40" />
+            ))}
+          </div>
+        ) : !pastSessions || pastSessions.length === 0 ? (
+          <div className="glass-panel p-8 rounded-3xl text-center border border-[#CFC5B8]/50 text-xs text-[#7E766B] space-y-2">
+            <History className="w-6 h-6 mx-auto text-[#86724F]/70" />
+            <p className="font-semibold">No past attendance sessions recorded yet.</p>
+            <p className="text-[11px]">Once you launch and lock a live QR session, its complete student attendance history will appear here.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pastSessions.map((session: any) => {
+              const isExpanded = expandedSessionId === session.sessionId;
+              const dateFormatted = new Date(session.startedAt || session.date).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              });
+              const timeFormatted = new Date(session.startedAt).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+
+              return (
+                <div
+                  key={session.sessionId}
+                  className="rounded-3xl bg-white/95 backdrop-blur-xl border border-[#CFC5B8]/60 p-5 shadow-sm transition-all duration-200 space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#F0EEE9] text-[#6C5939] flex items-center justify-center font-bold text-sm shrink-0">
+                        <FileSpreadsheet className="w-5 h-5 text-[#6C5939]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-[#1B1C19]">
+                            {session.subjectCode} · {session.subjectName}
+                          </h4>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              session.status === 'CLOSED'
+                                ? 'bg-[#E7DFD1] text-[#6C5939]'
+                                : 'bg-[#D2E4FF] text-[#004A77]'
+                            }`}
+                          >
+                            {session.status === 'CLOSED' ? 'FINALIZED' : 'ACTIVE'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#7E766B]">
+                          {dateFormatted} at {timeFormatted} · {session.roomName} · {session.sectionName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#30A46C] bg-[#E7F6ED] px-2.5 py-1 rounded-xl">
+                          {session.totalVerified} Present
+                        </span>
+                        <span className="text-xs font-bold text-[#BA1A1A] bg-[#FFDAD6] px-2.5 py-1 rounded-xl">
+                          {session.totalAbsent} Absent
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedSessionId(isExpanded ? null : session.sessionId)}
+                        className="py-1.5 px-3.5 rounded-xl bg-[#F0EEE9] hover:bg-[#E5E2DD] text-xs font-bold text-[#1B1C19] flex items-center gap-1.5 transition"
+                      >
+                        <Users className="w-3.5 h-3.5 text-[#6C5939]" />
+                        <span>{isExpanded ? 'Hide Records' : 'View Student Roster'}</span>
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Student Attendance Records breakdown */}
+                  {isExpanded && (
+                    <div className="pt-3 border-t border-[#CFC5B8]/40 animate-in fade-in duration-200 space-y-3">
+                      <div className="flex items-center justify-between text-xs font-semibold text-[#4C463C]">
+                        <span>Student Attendance Roll ({session.records?.length || 0} Students)</span>
+                        <span className="text-[11px] text-[#7E766B]">
+                          Session ID: <code className="bg-[#F0EEE9] px-1.5 py-0.5 rounded text-[10px]">{session.sessionId}</code>
+                        </span>
+                      </div>
+
+                      {(!session.records || session.records.length === 0) ? (
+                        <div className="text-xs text-[#7E766B] py-2 text-center">
+                          No individual records logged for this session.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                          {session.records.map((rec: any, idx: number) => {
+                            const isPresent = rec.status === 'PRESENT';
+                            const recTime = rec.markedAt
+                              ? new Date(rec.markedAt).toLocaleTimeString('en-US', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  second: '2-digit',
+                                })
+                              : '—';
+
+                            return (
+                              <div
+                                key={rec.studentId || idx}
+                                className={`p-3 rounded-2xl border flex items-center justify-between text-xs transition ${
+                                  isPresent
+                                    ? 'bg-[#FCFBF9] border-[#CFC5B8]/60'
+                                    : 'bg-[#FFF8F7] border-[#FFDAD6]'
+                                }`}
+                              >
+                                <div className="space-y-0.5 min-w-0 pr-2">
+                                  <div className="font-bold text-[#1B1C19] truncate">
+                                    {rec.studentName}
+                                  </div>
+                                  <div className="text-[11px] text-[#7E766B] truncate">
+                                    {rec.studentEmail}
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                                      isPresent
+                                        ? 'bg-[#E7DFD1] text-[#6C5939]'
+                                        : 'bg-[#FFDAD6] text-[#93000A]'
+                                    }`}
+                                  >
+                                    {isPresent ? 'PRESENT' : 'ABSENT'}
+                                  </span>
+                                  <span className="block text-[10px] text-[#7E766B] mt-0.5">
+                                    {isPresent ? recTime : 'Missed'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

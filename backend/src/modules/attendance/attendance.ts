@@ -6,6 +6,7 @@ import { emitToRoom } from '../realtime/realtime.js';
 export interface AttendanceDependencies {
   user: {
     findMany(args?: any): Promise<any[]>;
+    findUnique(args?: any): Promise<any>;
   };
   slot: {
     findUnique(args: { where: { id: string }; include?: any }): Promise<any>;
@@ -113,15 +114,87 @@ export const registerAttendanceRoutes = (
   });
 
   /**
+   * GET /api/v1/attendance/sessions/:id/records
+   * Returns current list of students who verified in this session
+   */
+  app.get('/api/v1/attendance/sessions/:id/records', { preHandler: auth }, async (request, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(request.params);
+    const records = await deps.attendanceRecord.findMany({
+      where: { sessionId: id },
+      include: {
+        student: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { markedAt: 'desc' },
+    });
+
+    return reply.send(
+      records.map((r: any) => ({
+        studentId: r.studentId,
+        studentName: r.student?.name || 'Verified Student',
+        studentEmail: r.student?.email || '',
+        markedAt: r.markedAt,
+        method: r.method,
+      }))
+    );
+  });
+
+  /**
    * POST /api/v1/attendance/sessions/:id/close
-   * Finalizes and closes the active QR attendance session
+   * Finalizes and closes the active QR attendance session, marking non-scanned students as ABSENT
    */
   app.post('/api/v1/attendance/sessions/:id/close', { preHandler: auth }, async (request, reply) => {
     const { id } = z.object({ id: z.string() }).parse(request.params);
+    const session = await deps.attendanceSession.findUnique({
+      where: { id },
+      include: {
+        slot: true,
+      },
+    });
+
+    if (!session) {
+      return reply.status(404).send({ error: 'Session not found' });
+    }
+
+    // Update session status to CLOSED
     await deps.attendanceSession.update({
       where: { id },
       data: { status: 'CLOSED', closedAt: new Date() },
     });
+
+    // Mark remaining enrolled students in this section who did not scan as ABSENT
+    if (session.slot?.sectionId) {
+      const sectionStudents = await deps.user.findMany({
+        where: { role: 'STUDENT', sectionId: session.slot.sectionId },
+      });
+
+      const existingRecords = await deps.attendanceRecord.findMany({
+        where: { sessionId: id },
+      });
+      const recordedStudentIds = new Set(existingRecords.map((r: any) => r.studentId));
+
+      for (const st of sectionStudents) {
+        if (!recordedStudentIds.has(st.id)) {
+          await deps.attendanceRecord.create({
+            data: {
+              sessionId: id,
+              studentId: st.id,
+              status: 'ABSENT',
+              method: 'SYSTEM',
+            },
+          });
+        }
+      }
+    }
+
+    // Emit live event that session attendance was finalized
+    emitToRoom(`session:${id}`, 'attendance:finalized', { sessionId: id });
+    if (session.slot?.sectionId) {
+      emitToRoom(`section:${session.slot.sectionId}`, 'attendance:finalized', { sessionId: id });
+    }
+    // Also broadcast to admin room
+    emitToRoom('admin', 'attendance:finalized', { sessionId: id });
 
     return reply.send({ success: true });
   });
@@ -171,9 +244,16 @@ export const registerAttendanceRoutes = (
       },
     });
 
-    // Real-time broadcast
+    const studentInfo = await deps.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, name: true, email: true },
+    });
+
+    // Real-time broadcast to the session room and general section
     emitToRoom(`session:${sessionId}`, 'attendance:marked', {
       studentId: user.id,
+      studentName: studentInfo?.name || 'Verified Student',
+      studentEmail: studentInfo?.email || '',
       sessionId,
       markedAt: record.markedAt,
     });
@@ -289,6 +369,68 @@ export const registerAttendanceRoutes = (
   });
 
   /**
+   * GET /api/v1/attendance/faculty/sessions-history
+   * List past conducted attendance sessions for faculty with turnout & student records
+   * Filtered specifically to classes taught by the requesting faculty member
+   */
+  app.get('/api/v1/attendance/faculty/sessions-history', { preHandler: auth }, async (request, reply) => {
+    const user = (request as any).user;
+
+    // Filter sessions to either started by this faculty or where the slot belongs to this faculty (or substitute)
+    const sessions = await deps.attendanceSession.findMany({
+      where: user.role === 'ADMIN' ? {} : {
+        OR: [
+          { startedById: user.id },
+          { slot: { facultyId: user.id } },
+        ],
+      },
+      include: {
+        slot: {
+          include: {
+            subject: true,
+            room: true,
+            section: true,
+          },
+        },
+        records: {
+          include: {
+            student: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+          orderBy: { markedAt: 'asc' },
+        },
+      },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    return reply.send(
+      sessions.map((s: any) => ({
+        sessionId: s.id,
+        status: s.status,
+        date: s.date,
+        startedAt: s.startedAt,
+        closedAt: s.closedAt,
+        period: s.slot?.period,
+        subjectCode: s.slot?.subject?.code || 'Course',
+        subjectName: s.slot?.subject?.name || 'Class Session',
+        roomName: s.slot?.room?.name || 'Room 406',
+        sectionName: s.slot?.section?.name || 'CSE-3F',
+        totalVerified: s.records.filter((r: any) => r.status === 'PRESENT').length,
+        totalAbsent: s.records.filter((r: any) => r.status === 'ABSENT').length,
+        records: s.records.map((r: any) => ({
+          studentId: r.studentId,
+          studentName: r.student?.name || 'Student',
+          studentEmail: r.student?.email || '',
+          status: r.status,
+          method: r.method,
+          markedAt: r.markedAt,
+        })),
+      }))
+    );
+  });
+
+  /**
    * GET /api/v1/attendance/student-history
    * Returns granular session attendance history for the student (for heatmap view)
    */
@@ -321,14 +463,25 @@ export const registerAttendanceRoutes = (
   /**
    * GET /api/v1/attendance/faculty-matrix
    * Faculty dashboard view: list all students with their attendance stats and heatmap activity
+   * Filtered specifically to the subjects taught by the logged-in faculty
    */
   app.get('/api/v1/attendance/faculty-matrix', { preHandler: auth }, async (request, reply) => {
+    const user = (request as any).user;
+
     const students = await deps.user.findMany({
       where: { role: 'STUDENT' },
       orderBy: { name: 'asc' },
     });
 
     const allRecords = await deps.attendanceRecord.findMany({
+      where: user.role === 'ADMIN' ? {} : {
+        session: {
+          OR: [
+            { startedById: user.id },
+            { slot: { facultyId: user.id } },
+          ],
+        },
+      },
       include: {
         session: {
           include: {
@@ -345,15 +498,16 @@ export const registerAttendanceRoutes = (
     const studentMatrix = students.map((st: any) => {
       const studentRecs = allRecords.filter((r: any) => r.studentId === st.id);
       const presentCount = studentRecs.filter((r: any) => r.status === 'PRESENT').length;
-      const totalCount = studentRecs.length > 0 ? studentRecs.length : 22;
-      const attended = studentRecs.length > 0 ? presentCount : (16 + (st.name.length % 5));
+      const totalCount = studentRecs.length;
+      const attended = presentCount;
       const total = totalCount;
-      const percentage = Math.min(100, Math.round((attended / total) * 100));
+      const percentage = total > 0 ? Math.round((attended / total) * 100) : 100;
 
       return {
         studentId: st.id,
         studentName: st.name,
         studentEmail: st.email,
+        usn: st.usn || '',
         attended,
         total,
         percentage,
@@ -365,6 +519,9 @@ export const registerAttendanceRoutes = (
         })),
       };
     });
+
+    // Sort by lowest attendance first so faculty immediately sees at-risk students
+    studentMatrix.sort((a, b) => a.percentage - b.percentage);
 
     return reply.send(studentMatrix);
   });

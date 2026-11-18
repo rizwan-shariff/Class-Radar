@@ -125,10 +125,13 @@ export default function StudentScanPage() {
       await html5QrCode.start(
         cameraConfig,
         {
-          fps: 15,
+          fps: 20,
+          aspectRatio: 1.0,
+          disableFlip: false,
           qrbox: (viewfinderWidth, viewfinderHeight) => {
+            // Expand scan area to 90% of viewfinder
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const qrEdge = Math.floor(minEdge * 0.75);
+            const qrEdge = Math.max(200, Math.floor(minEdge * 0.90));
             return { width: qrEdge, height: qrEdge };
           },
         },

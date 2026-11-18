@@ -5,9 +5,13 @@ import { getToken } from './api';
 const getSocketUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+    if (process.env.NEXT_PUBLIC_SOCKET_URL) {
+      return process.env.NEXT_PUBLIC_SOCKET_URL;
+    }
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `${window.location.protocol}//${hostname}:3000`;
     }
+    return window.location.origin;
   }
   return process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 };
