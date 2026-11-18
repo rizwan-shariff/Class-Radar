@@ -1,0 +1,39 @@
+# Node alpine base
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat openssl sqlite
+RUN npm install -g pnpm@10.5.2
+WORKDIR /app
+
+# Runner stage
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV DATABASE_URL=file:/data/dev.db
+
+# Ensure SQLite storage directory exists
+RUN mkdir -p /data
+
+# Copy manifests
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+# Install workspace dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy backend code
+COPY backend/ ./backend/
+
+WORKDIR /app/backend
+
+# Switch to SQLite Prisma schema and generate client
+RUN cp prisma/schema.sqlite.prisma prisma/schema.prisma
+RUN pnpm exec prisma generate
+
+EXPOSE 3000
+
+# Push DB schema on startup to ensure /data/dev.db exists, then run server
+CMD ["sh", "-c", "pnpm exec prisma db push && pnpm exec tsx prisma/seed.ts && pnpm exec tsx src/server.ts"]
+

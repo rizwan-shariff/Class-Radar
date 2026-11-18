@@ -1,0 +1,47 @@
+name: classradar-sqlite
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend.sqlite
+    container_name: classradar-sqlite-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: file:/data/dev.db
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_classradar_2026}
+    volumes:
+      - sqlite_data:/data
+    ports:
+      - '3000:3000'
+    networks:
+      - classradar-sqlite-net
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api/v1}
+    container_name: classradar-sqlite-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api/v1}
+    ports:
+      - '3001:3001'
+    networks:
+      - classradar-sqlite-net
+
+volumes:
+  sqlite_data:
+
+networks:
+  classradar-sqlite-net:
+    driver: bridge
+
