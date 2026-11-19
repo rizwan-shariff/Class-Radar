@@ -20,6 +20,18 @@ const getAbsencesQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
 });
 
+const parseStoredPeriods = (value: number[] | string): number[] => {
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((period): period is number => Number.isInteger(period) && period >= 1 && period <= 8)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
 // ── Dependency types ───────────────────────────────────────────────────────
 
 export type AbsenceDependencies = AuthDependencies & {
@@ -162,9 +174,7 @@ export const registerAbsenceRoutes = (
       }
 
       const responsePeriods =
-        typeof absence.periods === 'string'
-          ? (JSON.parse(absence.periods) as number[])
-          : absence.periods;
+        parseStoredPeriods(absence.periods);
 
       // Emit to admin room
       emitToRoom('admin', 'absence:created', {
@@ -180,7 +190,7 @@ export const registerAbsenceRoutes = (
         id: absence.id,
         facultyId: absence.facultyId,
         date: absence.date.toISOString().slice(0, 10),
-        periods: absence.periods,
+        periods: responsePeriods,
         reason: absence.reason,
         createdById: absence.createdById,
       });
@@ -209,10 +219,7 @@ export const registerAbsenceRoutes = (
 
       return reply.send(
         absences.map((a) => {
-          const periods =
-            typeof a.periods === 'string'
-              ? (JSON.parse(a.periods) as number[])
-              : a.periods;
+          const periods = parseStoredPeriods(a.periods);
           return {
             id: a.id,
             facultyId: a.facultyId,

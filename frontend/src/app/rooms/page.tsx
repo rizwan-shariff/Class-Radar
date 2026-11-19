@@ -199,7 +199,7 @@ export default function FreeRoomsPage() {
                     <div className="min-w-0 pr-2">
                       <span className="text-xs font-semibold text-[#BA1A1A] flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-[#BA1A1A]" />
-                        <span>Booked / Occupied</span>
+                        <span>BOOKED</span>
                       </span>
                       {room.booking?.purpose && (
                         <p className="mt-1 text-[10px] text-[#7E766B] truncate" title={room.booking.purpose}>

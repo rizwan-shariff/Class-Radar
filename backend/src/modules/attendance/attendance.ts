@@ -11,6 +11,17 @@ export interface AttendanceDependencies {
   slot: {
     findUnique(args: { where: { id: string }; include?: any }): Promise<any>;
     findFirst(args: { where: any; include?: any }): Promise<any>;
+    create(args: { data: any }): Promise<any>;
+  };
+  section?: {
+    findFirst(args: { where: any }): Promise<any>;
+  };
+  subject?: {
+    findMany(args?: any): Promise<any[]>;
+    findFirst(args: { where?: any }): Promise<any>;
+  };
+  room?: {
+    findFirst(args: { where?: any }): Promise<any>;
   };
   attendanceSession: {
     create(args: { data: any }): Promise<any>;
@@ -24,9 +35,6 @@ export interface AttendanceDependencies {
     create(args: { data: any }): Promise<any>;
     findMany(args?: { where?: any; include?: any; orderBy?: any }): Promise<any[]>;
     update(args: { where: { id: string }; data: any }): Promise<any>;
-  };
-  subject: {
-    findMany(args?: any): Promise<any[]>;
   };
 }
 
@@ -67,14 +75,20 @@ export const registerAttendanceRoutes = (
     if (!['FACULTY', 'ADMIN'].includes(user.role)) {
       return reply.status(403).send({ error: 'Only faculty or admins can launch attendance' });
     }
-    const body = z
+    const parsedBody = z
       .object({
         slotId: z.string().optional(),
         sectionId: z.string().optional(),
         period: z.number().int().min(1).max(8).optional(),
         date: z.string(),
       })
-      .parse(request.body);
+      .safeParse(request.body);
+    if (!parsedBody.success) {
+      return reply.status(400).send({
+        error: { code: 'BAD_REQUEST', message: 'Invalid attendance session payload' },
+      });
+    }
+    const body = parsedBody.data;
 
     let slot = body.slotId
       ? await deps.slot.findUnique({ where: { id: body.slotId } })
@@ -108,7 +122,36 @@ export const registerAttendanceRoutes = (
     }
 
     if (!slot) {
-      return reply.status(404).send({ error: 'Slot not found' });
+      const section = body.sectionId
+        ? await deps.section?.findFirst({ where: { id: body.sectionId } })
+        : await deps.section?.findFirst({ where: {} });
+      const subject = await deps.subject?.findFirst({ where: {} });
+      const room = await deps.room?.findFirst({ where: {} });
+
+      if (!section || !subject || !room || !body.period) {
+        return reply.status(422).send({
+          error: {
+            code: 'NO_ADHOC_SLOT_CONTEXT',
+            message: 'Select a period and ensure a section, subject, and room are available.',
+          },
+        });
+      }
+
+      const weekday = new Date(body.date).getUTCDay();
+      const normalizedWeekday = weekday === 0 ? 6 : weekday;
+      slot = await deps.slot.create({
+        data: {
+          sectionId: section.id,
+          subjectId: subject.id,
+          facultyId: user.id,
+          roomId: room.id,
+          weekday: normalizedWeekday,
+          period: body.period,
+        },
+      });
+      slot = await deps.slot.findUnique({
+        where: { id: slot.id },
+      });
     }
 
     const session = await deps.attendanceSession.create({
@@ -355,7 +398,7 @@ export const registerAttendanceRoutes = (
    */
   app.get('/api/v1/attendance/me/summary', { preHandler: auth }, async (request, reply) => {
     const user = (request as any).user;
-    const subjects = await deps.subject.findMany();
+    const subjects = await deps.subject?.findMany({}) ?? [];
 
     const records = await deps.attendanceRecord.findMany({
       where: { studentId: user.id },

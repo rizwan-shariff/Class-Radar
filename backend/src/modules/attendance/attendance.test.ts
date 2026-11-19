@@ -15,6 +15,12 @@ const makeToken = (role = 'STUDENT', sectionId: string | null = 'sec-1') =>
   jwt.sign({ role, sectionId }, secret, { subject: 'stu-1', expiresIn: '1h' });
 
 const createDeps = (): AttendanceDependencies => ({
+  section: {
+    findFirst: async () => ({ id: 'sec-1', name: 'CSE-3F', department: 'CSE' }),
+  },
+  room: {
+    findFirst: async () => ({ id: 'room-1', name: 'Room 406' }),
+  },
   user: {
     findMany: async () => [
       { id: 'stu-1', name: 'Student One', email: 'student1@test.com' },
@@ -26,6 +32,7 @@ const createDeps = (): AttendanceDependencies => ({
   slot: {
     findUnique: async () => ({ id: 'slot-1', sectionId: 'sec-1' }),
     findFirst: async () => ({ id: 'slot-1', sectionId: 'sec-1', period: 1, subject: { name: 'Course' }, room: { name: 'Room 406' } }),
+    create: async ({ data }: { data: any }) => ({ id: 'adhoc-slot-1', ...data }),
   },
   attendanceSession: {
     create: async () => ({ id: 'session-1', slotId: 'slot-1', status: 'OPEN' }),
@@ -49,6 +56,7 @@ const createDeps = (): AttendanceDependencies => ({
   },
   subject: {
     findMany: async () => [],
+    findFirst: async () => ({ id: 'sub-1', code: 'CSE301', name: 'Course' }),
   },
 });
 
@@ -82,6 +90,18 @@ describe('attendance bug fixes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json().token).toBeTypeOf('string');
     expect(new Date(res.json().expiresAt).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('allows a faculty member to launch an ad-hoc session for any period', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/attendance/sessions',
+      headers: { authorization: `Bearer ${makeToken('FACULTY', null)}` },
+      payload: { period: 8, date: '2026-11-09' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ status: 'OPEN' });
   });
 
   it('returns present and total turnout counts', async () => {
