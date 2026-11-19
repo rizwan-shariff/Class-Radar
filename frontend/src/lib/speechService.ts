@@ -11,6 +11,9 @@ export class SpeechService {
   private static recognitionInstance: any = null;
   private static isMuted: boolean = false;
   private static lastTranscript: string = '';
+  private static retryCount: number = 0;
+  private static maxRetries: number = 2;
+  private static isUserIntentionallyListening: boolean = false;
 
   public static isRecognitionSupported(): boolean {
     if (typeof window === 'undefined') return false;
@@ -38,40 +41,32 @@ export class SpeechService {
     return SpeechService.isMuted;
   }
 
-  public static async requestMicPermission(): Promise<boolean> {
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Release stream immediately once granted
-        stream.getTracks().forEach((track) => track.stop());
-        return true;
-      } catch (err: any) {
-        console.warn('Microphone permission request failed:', err);
-        return false;
-      }
-    }
-    return true;
-  }
-
   public static async startListening(callbacks: SpeechRecognitionCallbacks): Promise<boolean> {
     if (!SpeechService.isRecognitionSupported()) {
-      callbacks.onError?.('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      callbacks.onError?.('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
       return false;
     }
 
-    // Stop previous sessions & speech synthesis
-    SpeechService.stopListening();
+    // Stop ongoing operations
     SpeechService.stopSpeaking();
+    SpeechService.isUserIntentionallyListening = true;
+    SpeechService.retryCount = 0;
     SpeechService.lastTranscript = '';
 
-    // Proactively check/request mic access
-    const permGranted = await SpeechService.requestMicPermission();
-    if (!permGranted) {
-      callbacks.onError?.('Microphone permission was denied. Please allow microphone access in your browser address bar.');
-      return false;
-    }
+    return SpeechService.initRecognition(callbacks);
+  }
 
+  private static initRecognition(callbacks: SpeechRecognitionCallbacks): boolean {
     try {
+      if (SpeechService.recognitionInstance) {
+        try {
+          SpeechService.recognitionInstance.abort();
+        } catch {
+          // ignore
+        }
+        SpeechService.recognitionInstance = null;
+      }
+
       const win = window as any;
       const SpeechRecognitionClass =
         win.SpeechRecognition ||
@@ -81,11 +76,13 @@ export class SpeechService {
 
       const recognition = new SpeechRecognitionClass();
 
-      // Continuous = false allows mobile and desktop to cleanly emit final results
-      recognition.continuous = false;
+      // continuous = true prevents immediate cut-off while user thinks or speaks slowly
+      recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-      recognition.lang = typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en-US';
+      recognition.maxAlternatives = 3;
+
+      // Use generic en-US or navigator language
+      recognition.lang = 'en-US';
 
       recognition.onstart = () => {
         callbacks.onStart?.();
@@ -99,7 +96,7 @@ export class SpeechService {
           const item = event.results[i];
           const text = item[0]?.transcript || '';
           if (item.isFinal) {
-            finalTranscript += text;
+            finalTranscript += text + ' ';
           } else {
             interimTranscript += text;
           }
@@ -110,59 +107,91 @@ export class SpeechService {
           SpeechService.lastTranscript = candidate;
         }
 
-        callbacks.onResult?.(candidate, !!finalTranscript);
+        if (finalTranscript.trim()) {
+          // Received completed phrase!
+          callbacks.onResult?.(finalTranscript.trim(), true);
+          SpeechService.stopListening();
+        } else if (interimTranscript.trim()) {
+          callbacks.onResult?.(interimTranscript.trim(), false);
+        }
       };
 
       recognition.onerror = (event: any) => {
-        console.warn('Speech recognition error event:', event.error);
-        if (event.error === 'no-speech') {
-          // If we had recorded some transcript before the silence timeout, treat as end instead of error
-          if (SpeechService.lastTranscript) {
-            callbacks.onResult?.(SpeechService.lastTranscript, true);
+        const errType = event.error;
+        console.warn('SpeechRecognition error:', errType);
+
+        if (errType === 'no-speech') {
+          // If we had gathered some speech, deliver it!
+          if (SpeechService.lastTranscript.trim()) {
+            callbacks.onResult?.(SpeechService.lastTranscript.trim(), true);
+            SpeechService.stopListening();
             return;
           }
-          callbacks.onError?.('No speech was detected. Please try speaking closer to the microphone.');
+
+          // If the browser simply timed out waiting for audio without receiving data yet,
+          // automatically retry once if the user is still in listening state
+          if (SpeechService.isUserIntentionallyListening && SpeechService.retryCount < SpeechService.maxRetries) {
+            SpeechService.retryCount++;
+            setTimeout(() => {
+              if (SpeechService.isUserIntentionallyListening) {
+                SpeechService.initRecognition(callbacks);
+              }
+            }, 250);
+            return;
+          }
+
+          callbacks.onError?.('No voice input received. Check your system microphone settings or type your question below.');
           return;
         }
 
-        if (event.error === 'not-allowed') {
-          callbacks.onError?.('Microphone access blocked. Click the lock/tune icon in your browser URL bar to allow microphone.');
+        if (errType === 'not-allowed') {
+          callbacks.onError?.('Microphone access was blocked. Please click the icon in your address bar to allow microphone access.');
           return;
         }
 
-        if (event.error === 'audio-capture') {
-          callbacks.onError?.('No microphone input detected. Please ensure your microphone is plugged in.');
+        if (errType === 'audio-capture') {
+          callbacks.onError?.('No working microphone found on your device.');
           return;
         }
 
-        if (event.error === 'network') {
-          callbacks.onError?.('Speech recognition network error. Please check your internet connection.');
+        if (errType === 'network') {
+          callbacks.onError?.('Speech recognition network error. Please verify your internet connection.');
           return;
         }
 
-        callbacks.onError?.(`Speech recognition error (${event.error}).`);
+        callbacks.onError?.(`Speech recognition error: ${errType}`);
       };
 
       recognition.onend = () => {
-        // If recognition ended and we have a transcript that hasn't fired final result yet
-        if (SpeechService.lastTranscript) {
-          callbacks.onResult?.(SpeechService.lastTranscript, true);
+        // If recognition closed and we have an unfinalized transcript
+        if (SpeechService.isUserIntentionallyListening && SpeechService.lastTranscript.trim()) {
+          callbacks.onResult?.(SpeechService.lastTranscript.trim(), true);
+          SpeechService.stopListening();
+        } else if (SpeechService.isUserIntentionallyListening && SpeechService.retryCount < SpeechService.maxRetries) {
+          SpeechService.retryCount++;
+          setTimeout(() => {
+            if (SpeechService.isUserIntentionallyListening) {
+              SpeechService.initRecognition(callbacks);
+            }
+          }, 250);
+        } else {
+          SpeechService.isUserIntentionallyListening = false;
+          callbacks.onEnd?.();
         }
-        SpeechService.recognitionInstance = null;
-        callbacks.onEnd?.();
       };
 
       SpeechService.recognitionInstance = recognition;
       recognition.start();
       return true;
     } catch (err: any) {
-      console.error('Failed to start SpeechRecognition:', err);
-      callbacks.onError?.(err?.message || 'Failed to start speech recognition.');
+      console.error('Speech recognition initialization error:', err);
+      callbacks.onError?.('Failed to activate voice recognition.');
       return false;
     }
   }
 
   public static stopListening(): void {
+    SpeechService.isUserIntentionallyListening = false;
     if (SpeechService.recognitionInstance) {
       try {
         SpeechService.recognitionInstance.abort();
