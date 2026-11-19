@@ -25,6 +25,7 @@ import {
   Lock
 } from 'lucide-react';
 import Link from 'next/link';
+import { JitterActionSlotButton } from '@/components/ui/JitterActionSlotButton';
 
 export default function StudentDashboardPage() {
   const [selectedDate, setSelectedDate] = useState('2026-11-09');
@@ -191,12 +192,12 @@ export default function StudentDashboardPage() {
               return (
                 <article
                   key={slot.id || index}
-                  className={`group rounded-3xl p-6 sm:p-7 transition-all duration-300 relative overflow-hidden ${
+                  className={`group rounded-3xl p-6 sm:p-7 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] relative overflow-hidden ${
                     isCanc
                       ? 'bg-[#F6F3EE]/60 backdrop-blur-md opacity-75 ring-1 ring-black/[0.04]'
                       : isSub
-                      ? 'bg-white/95 backdrop-blur-2xl shadow-md ring-1 ring-[#8A7653]/40 hover:shadow-lg'
-                      : 'bg-white/85 backdrop-blur-xl shadow-sm hover:shadow-md ring-1 ring-black/[0.04]'
+                      ? 'bg-white/95 backdrop-blur-2xl shadow-md ring-1 ring-[#8A7653]/40 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.008]'
+                      : 'bg-white/85 backdrop-blur-xl shadow-sm hover:shadow-lg ring-1 ring-black/[0.04] hover:-translate-y-1 hover:scale-[1.008]'
                   }`}
                 >
                   {/* Active highlight spine */}
@@ -267,13 +268,7 @@ export default function StudentDashboardPage() {
 
                     {/* Right Action Button */}
                     <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-2 sm:pt-0">
-                      <Link
-                        href="/student/scan"
-                        className="px-4 py-2 rounded-full bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
-                      >
-                        <span>Scan & Verify</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
+                      <JitterActionSlotButton href="/student/scan" isCancelled={isCanc} />
                     </div>
                   </div>
 

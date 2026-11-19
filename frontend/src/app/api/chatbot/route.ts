@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey =
       process.env.NVIDIA_API_KEY ||
-      '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';
+      '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';
     const model =
       process.env.NEXT_PUBLIC_NVIDIA_MODEL || 'nvidia/nemotron-3.5-lightning-30b-a3b';
 
@@ -14,25 +14,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const systemPrompt = `You are ClassRadar AI Assistant, an institutional academic copilot with full access to institutional academic data.
+    const systemPrompt = `You are ClassRadar AI Assistant, an institutional academic copilot for NIE North Campus with complete, real-time access to the student and faculty academic database.
 User Info:
-- Name: ${user?.name || 'Student/Faculty'}
+- Name: ${user?.name && user.name !== 'PRITAM' ? user.name : 'Student'}
 - Role: ${user?.role || 'STUDENT'}
 - Department: ${user?.department || 'CSE'}
 - Active Section: ${user?.sectionId ? 'CSE-3F' : 'N/A'}
 
-Live Context & Complete Academic Data:
-${context || 'No specific live context.'}
+Live Institutional Academic Context & Timetable Data:
+${context || 'No specific live context available.'}
 
-Role Capabilities & Permissions:
-- If user is STUDENT: They can check schedules (today, tomorrow, or any weekday Monday through Saturday), live attendance percentages, bunk limits, upcoming assignment & project submission deadlines, free campus rooms, and launch the QR scanner. If they ask about lectures, schedules, tomorrow's classes, or today's timetable, use the Timetable data in the Live Context to answer directly and accurately.
-- If user is FACULTY: They can manage teaching schedules, launch QR sessions, mark absences, find free rooms, and manage/finalize/extend assignment & project submission deadlines.
-- 75% Rule: Institutional attendance threshold is 75%. If below, advise attending consecutive lectures.
-
-Instructions:
-Answer accurately, helpfully, and concisely in 2 to 4 sentences using the provided Live Context data. Address the user directly by first name.
-Do not say you do not have access if the information is provided in the Live Context.
-Do not output code blocks or markdown tables. Keep it conversational, confident, and informative.`;
+Critical Instructions:
+1. NEVER output generic brush-offs like "Here is the academic information you requested".
+2. When the user asks about timetable, schedules, today's or tomorrow's classes, attendance, deadlines, or free rooms, you MUST inspect the Live Institutional Academic Context provided above and list out the exact details:
+   - For classes/timetable: State the exact Period, Subject Code, Subject Name, and Room (e.g. "Period 1: 1BMAT301 in Room 406").
+   - For attendance: State their exact attendance percentage, classes attended/total, and exact bunk headroom or classes they must attend.
+   - For deadlines: State the course, assignment title, and exact due date.
+   - For rooms: State the list of currently vacant rooms and labs.
+3. Be direct, comprehensive, and helpful in 2 to 4 informative sentences. Do not hide the data.
+4. Do not output markdown code blocks. Keep it conversational, confident, and direct.`;
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
@@ -46,8 +46,9 @@ Do not output code blocks or markdown tables. Keep it conversational, confident,
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt },
         ],
-        temperature: 0.3,
-        max_tokens: 800,
+        temperature: 0.2,
+        max_tokens: 2048,
+        chat_template_kwargs: { thinking: false },
       }),
     });
 
@@ -63,8 +64,26 @@ Do not output code blocks or markdown tables. Keep it conversational, confident,
     }
 
     const data = await response.json();
-    console.log('NVIDIA NIM Choices:', JSON.stringify(data.choices?.[0]?.message));
-    const content = data.choices?.[0]?.message?.content || '';
+    console.log('NVIDIA NIM Raw Output:', JSON.stringify(data.choices?.[0]?.message));
+    
+    // Extract clean content (NEVER expose internal thinking/reasoning traces to the user)
+    let content = data.choices?.[0]?.message?.content || '';
+
+    // If content is empty or contains reasoning prefix artifacts, clean it thoroughly
+    if (!content && data.choices?.[0]?.message?.reasoning_content) {
+      // Strip any "Here's a thinking process:" chain-of-thought blocks
+      const rawReasoning = data.choices[0].message.reasoning_content;
+      const stripped = rawReasoning
+        .replace(/Here's a thinking process:[\s\S]*?(Draft:|Response:|Output:|$)/i, '')
+        .replace(/^[\s\S]*?(Draft:|Response:|Output:)/i, '')
+        .trim();
+      content = stripped;
+    }
+
+    // Double safety check: strip any remaining thinking process text
+    if (content.includes("Here's a thinking process:")) {
+      content = content.replace(/Here's a thinking process:[\s\S]*?\n\n/i, '').trim();
+    }
 
     // Route detection based on keywords in user prompt
     const q = prompt.toLowerCase();

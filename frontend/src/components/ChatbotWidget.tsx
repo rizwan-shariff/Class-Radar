@@ -22,6 +22,7 @@ import {
   Minimize2,
   Maximize2
 } from 'lucide-react';
+import { VoiceWaveform } from '@/components/ui/VoiceWaveform';
 
 export function ChatbotWidget() {
   const { user } = useAuth();
@@ -34,6 +35,7 @@ export function ChatbotWidget() {
   const [inputText, setInputText] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
   const [micSupported, setMicSupported] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
@@ -53,10 +55,11 @@ export function ChatbotWidget() {
     if (messages.length === 0 && !hasStarted) {
       setHasStarted(true);
       const roleName = user.role.toLowerCase();
+      const displayName = user.name && user.name !== 'PRITAM' ? user.name.split(' ')[0] : 'there';
       const initialGreeting: ChatMessage = {
         id: 'msg-welcome',
         sender: 'assistant',
-        text: `👋 Hi **${user.name.split(' ')[0]}**! I am your ClassRadar voice assistant for the **${roleName}** portal. You can speak to me or type your questions below.`,
+        text: `👋 Hi **${displayName}**! I am your ClassRadar voice assistant for the **${roleName}** portal. You can speak to me or type your questions below.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages([initialGreeting]);
@@ -105,6 +108,7 @@ export function ChatbotWidget() {
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setInterimTranscript('');
+    setIsResponding(true);
 
     try {
       const result = await RoleIntentHandler.processPrompt(text, user, (route) => {
@@ -126,6 +130,7 @@ export function ChatbotWidget() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setIsResponding(false);
 
       // Speak aloud
       if (!isMuted && result.spokenText) {
@@ -135,6 +140,7 @@ export function ChatbotWidget() {
         });
       }
     } catch (err: any) {
+      setIsResponding(false);
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'assistant',
@@ -232,7 +238,7 @@ export function ChatbotWidget() {
             setTimeout(() => inputRef.current?.focus(), 150);
           }}
           aria-label="Open ClassRadar Voice AI Assistant"
-          className="fixed bottom-24 right-5 sm:bottom-8 sm:right-8 z-50 group flex items-center gap-3 p-3.5 sm:px-5 sm:py-3.5 rounded-full bg-[#1B1C19] dark:bg-[#FCF9F4] text-white dark:text-[#1B1C19] shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-[#6C5939]/20"
+          className="fixed bottom-24 right-5 sm:bottom-8 sm:right-8 z-50 group flex items-center gap-3 p-3.5 sm:px-5 sm:py-3.5 rounded-full bg-[#1B1C19] dark:bg-[#FCF9F4] text-white dark:text-[#1B1C19] shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-[#6C5939]/20 bot-beacon-ring"
         >
           <div className="relative">
             <Sparkles className="w-5 h-5 text-[#E7DFD1] dark:text-[#6C5939] animate-pulse" />
@@ -241,6 +247,7 @@ export function ChatbotWidget() {
           <span className="hidden sm:inline-block font-semibold text-sm tracking-tight">
             Voice Assistant
           </span>
+          <VoiceWaveform isSpeaking={isSpeaking} isListening={isListening} />
           <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-white/10 dark:bg-black/10 text-[#E7DFD1] dark:text-[#6C5939]">
             AI
           </span>
@@ -249,27 +256,38 @@ export function ChatbotWidget() {
 
       {/* ── Main Chatbot Window ────────────────────────────────────────── */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[420px] max-h-[82vh] h-[600px] flex flex-col rounded-3xl bg-[#FCF9F4]/95 dark:bg-[#1C1D21]/95 backdrop-blur-2xl border border-[#CFC5B8]/60 dark:border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] transition-all animate-in fade-in slide-in-from-bottom-6 duration-300 overflow-hidden">
+        <div className="fixed bottom-20 right-3 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-1.5rem)] sm:w-[390px] max-h-[78vh] sm:max-h-[82vh] h-[540px] sm:h-[580px] flex flex-col rounded-3xl bg-[#FCF9F4]/98 dark:bg-[#1C1D21]/98 backdrop-blur-2xl border border-[#CFC5B8]/80 dark:border-white/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.35)] transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 overflow-hidden">
           
           {/* Header */}
-          <div className="px-5 py-4 border-b border-[#CFC5B8]/40 dark:border-white/10 bg-white/40 dark:bg-black/20 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#6C5939] to-[#86724F] flex items-center justify-center text-white shadow-sm ring-2 ring-[#6C5939]/20">
-                <Bot className="w-5 h-5" />
+          <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-[#CFC5B8]/40 dark:border-white/10 bg-white/60 dark:bg-black/20 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#6C5939] to-[#86724F] flex items-center justify-center text-white shadow-sm ring-2 ring-[#6C5939]/20 transition-transform duration-300 hover:rotate-6">
+                  <Bot className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${isSpeaking ? 'animate-bounce' : isListening ? 'animate-pulse' : ''}`} />
+                </div>
+                {isSpeaking && (
+                  <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-white animate-ping" />
+                )}
+                {isListening && (
+                  <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white animate-ping" />
+                )}
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm text-[#1B1C19] dark:text-[#E8EAED] tracking-tight">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="font-bold text-xs sm:text-sm text-[#1B1C19] dark:text-[#E8EAED] tracking-tight">
                     ClassRadar AI
                   </h3>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E7DFD1] dark:bg-white/10 text-[#6C5939] dark:text-[#D4AF37]">
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#E7DFD1] dark:bg-white/10 text-[#6C5939] dark:text-[#D4AF37]">
                     {user.role}
                   </span>
                 </div>
-                <p className="text-[11px] font-medium text-[#7E766B] dark:text-white/50 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                  <span>Voice & Navigation Active</span>
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[10px] font-medium text-[#7E766B] dark:text-white/50 flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full inline-block ${isListening ? 'bg-red-500 animate-pulse' : isSpeaking ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'}`} />
+                    <span>{isListening ? 'Listening...' : isSpeaking ? 'Speaking...' : 'Ready'}</span>
+                  </p>
+                  <VoiceWaveform isSpeaking={isSpeaking} isListening={isListening} />
+                </div>
               </div>
             </div>
 
@@ -316,32 +334,32 @@ export function ChatbotWidget() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300`}
               >
                 {msg.sender === 'assistant' && (
-                  <div className="w-7 h-7 rounded-xl bg-[#6C5939]/10 dark:bg-white/10 flex items-center justify-center text-[#6C5939] dark:text-[#D4AF37] shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-xl bg-[#6C5939]/10 dark:bg-white/10 flex items-center justify-center text-[#6C5939] dark:text-[#D4AF37] shrink-0 mt-0.5 shadow-xs">
                     <Sparkles className="w-3.5 h-3.5" />
                   </div>
                 )}
 
                 <div
-                  className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl shadow-sm text-xs leading-relaxed ${
+                  className={`group relative max-w-[84%] px-4 py-2.5 rounded-2xl shadow-sm text-xs leading-relaxed transition-all duration-200 hover:shadow-md ${
                     msg.sender === 'user'
-                      ? 'bg-[#1B1C19] dark:bg-[#FCF9F4] text-white dark:text-[#1B1C19] rounded-br-xs'
-                      : 'bg-white/80 dark:bg-[#25262B] text-[#1B1C19] dark:text-[#E8EAED] border border-[#CFC5B8]/40 dark:border-white/10 rounded-bl-xs'
+                      ? 'bg-gradient-to-br from-[#242528] to-[#161719] dark:from-[#FCF9F4] dark:to-[#ECE6DC] text-white dark:text-[#1B1C19] rounded-br-xs'
+                      : 'bg-white/90 dark:bg-[#25262B] text-[#1B1C19] dark:text-[#E8EAED] border border-[#CFC5B8]/40 dark:border-white/10 rounded-bl-xs'
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.text}</p>
 
-                  {/* Navigation Call-to-Action Link */}
+                  {/* Navigation Call-to-Action Link with Jitter slide effect */}
                   {msg.action && msg.action.route && (
                     <div className="mt-2.5 pt-2 border-t border-[#CFC5B8]/30 dark:border-white/10 flex justify-end">
                       <button
                         onClick={() => router.push(msg.action!.route!)}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#6C5939] dark:text-[#D4AF37] hover:underline"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#6C5939]/10 dark:bg-white/10 text-[11px] font-bold text-[#6C5939] dark:text-[#D4AF37] hover:bg-[#6C5939] hover:text-white transition-all duration-200 active:scale-95 group/btn"
                       >
                         <span>{msg.action.label}</span>
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="w-3 h-3 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
                       </button>
                     </div>
                   )}
@@ -356,6 +374,25 @@ export function ChatbotWidget() {
                 </div>
               </div>
             ))}
+
+            {/* AI Responding & Thinking Animation Bubble */}
+            {isResponding && (
+              <div className="flex gap-2.5 justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="w-7 h-7 rounded-xl bg-[#6C5939]/10 dark:bg-white/10 flex items-center justify-center text-[#6C5939] dark:text-[#D4AF37] shrink-0 mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5 animate-spin text-[#6C5939] dark:text-[#D4AF37]" />
+                </div>
+                <div className="relative overflow-hidden px-4 py-3 rounded-2xl bg-white/80 dark:bg-[#25262B] text-[#1B1C19] dark:text-[#E8EAED] border border-[#CFC5B8]/40 dark:border-white/10 rounded-bl-xs shadow-sm flex items-center gap-2">
+                  {/* Subtle Light Sheen on responding */}
+                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-[#6C5939]/10 dark:via-white/5 to-transparent ai-shimmer-sweep" />
+                  <span className="text-[11px] font-semibold text-[#7E766B] dark:text-white/60">ClassRadar is analyzing</span>
+                  <div className="flex items-center gap-1 ml-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] dark:bg-[#D4AF37] thinking-dot-1" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] dark:bg-[#D4AF37] thinking-dot-2" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] dark:bg-[#D4AF37] thinking-dot-3" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Interim Speech Transcription Bubble */}
             {isListening && (
@@ -399,13 +436,13 @@ export function ChatbotWidget() {
           )}
 
           {/* Input & Microphone Bar */}
-          <div className="p-3 bg-white/60 dark:bg-[#1C1D21]/90 border-t border-[#CFC5B8]/40 dark:border-white/10">
+          <div className="p-2.5 sm:p-3 bg-white/90 dark:bg-[#1C1D21]/95 border-t border-[#CFC5B8]/60 dark:border-white/10 shadow-sm">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendPrompt(inputText);
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5 sm:gap-2"
             >
               <div className="relative flex-1">
                 <input
@@ -416,9 +453,9 @@ export function ChatbotWidget() {
                   placeholder={
                     isListening
                       ? 'Listening to your voice...'
-                      : `Ask anything about ${user.role.toLowerCase()} portal...`
+                      : `Ask about timetable, deadlines, rooms...`
                   }
-                  className="w-full bg-[#EAE8E3]/70 dark:bg-white/5 border border-[#CFC5B8]/40 dark:border-white/10 rounded-2xl px-4 py-2.5 text-xs text-[#1B1C19] dark:text-[#E8EAED] placeholder-[#7E766B] dark:placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#6C5939]/30 transition-all"
+                  className="w-full bg-[#F0EEE9] dark:bg-white/10 border border-[#CFC5B8]/70 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2 sm:py-2.5 text-xs font-semibold text-[#1B1C19] dark:text-[#FFFFFF] placeholder-[#635E53] dark:placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#6C5939]/40 focus:border-[#6C5939] focus:bg-white dark:focus:bg-[#1C1D21] transition-all"
                 />
               </div>
 
@@ -434,7 +471,7 @@ export function ChatbotWidget() {
                     ? 'Stop listening'
                     : 'Start speaking (Voice command)'
                 }
-                className={`relative p-2.5 rounded-2xl transition-all duration-300 ${
+                className={`relative p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all duration-300 ${
                   isListening
                     ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105'
                     : micSupported
@@ -444,11 +481,11 @@ export function ChatbotWidget() {
               >
                 {isListening ? (
                   <>
-                    <Mic className="w-4 h-4 animate-pulse" />
-                    <span className="absolute inset-0 rounded-2xl border-2 border-red-500 animate-ping opacity-75" />
+                    <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" />
+                    <span className="absolute inset-0 rounded-xl sm:rounded-2xl border-2 border-red-500 animate-ping opacity-75" />
                   </>
                 ) : (
-                  <Mic className="w-4 h-4" />
+                  <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
               </button>
 
@@ -457,13 +494,13 @@ export function ChatbotWidget() {
                 type="submit"
                 disabled={!inputText.trim()}
                 aria-label="Send Message"
-                className={`p-2.5 rounded-2xl transition-all ${
+                className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all ${
                   inputText.trim()
                     ? 'bg-[#6C5939] text-white hover:bg-[#86724F] shadow-sm active:scale-95'
                     : 'bg-[#EAE8E3]/60 dark:bg-white/5 text-[#7E766B]/50 cursor-not-allowed'
                 }`}
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </form>
           </div>

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { JitterHeaderButton } from '@/components/ui/JitterHeaderButton';
 import { useLandingIntro, useScrollReveal, useAnimeCounter } from '@/lib/useAnime';
 import {
   Compass,
@@ -61,7 +62,7 @@ export default function LandingPage() {
       {/* WRAPPER FOR INTRO HERO ANIMATION */}
       <div ref={heroRef} className="relative w-full">
         {/* 1. MINIMAL FROSTED TOP NAVIGATION */}
-        <header className="fixed top-0 left-0 w-full z-50 bg-surface/80 dark:bg-[#18191C]/80 backdrop-blur-xl border-b border-outline-variant/40 dark:border-white/10 shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
+        <header className="fixed top-0 left-0 w-full z-50 bg-[#FCF9F4]/95 dark:bg-[#18191C]/95 backdrop-blur-2xl border-b border-[#CFC5B8]/60 dark:border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-colors">
           <div className="h-16 sm:h-20 w-full max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between">
             {/* Logo & Institute Mark */}
             <Link
@@ -69,39 +70,39 @@ export default function LandingPage() {
               data-intro="header-logo"
               className="flex items-center gap-3 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-primary-container dark:bg-[#6C5939] text-on-primary-container dark:text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <Compass className="w-5 h-5 text-on-primary-container dark:text-white animate-spin-slow" />
+              <div className="w-10 h-10 rounded-xl bg-[#6C5939] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform ring-2 ring-[#6C5939]/20">
+                <Compass className="w-5 h-5 text-white animate-spin-slow" />
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-lg text-on-surface dark:text-[#E8EAED] tracking-tight">
+                <span className="font-bold text-lg text-[#1B1C19] dark:text-[#E8EAED] tracking-tight group-hover:text-[#6C5939] transition-colors">
                   ClassRadar
                 </span>
-                <span className="text-[10px] uppercase text-secondary dark:text-slate-400 tracking-widest font-medium">
+                <span className="text-[10px] uppercase text-[#635E53] dark:text-slate-400 tracking-widest font-bold">
                   NIE North Campus
                 </span>
               </div>
             </Link>
 
             {/* Nav Links (Desktop) */}
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-on-surface-variant dark:text-slate-300">
+            <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-[#4C463C] dark:text-slate-300">
               <a
                 href="#features"
                 data-intro="header-link"
-                className="hover:text-primary dark:hover:text-[#FDD663] transition-colors"
+                className="hover:text-[#1B1C19] dark:hover:text-[#FDD663] transition-colors"
               >
                 Features
               </a>
               <a
                 href="#architecture"
                 data-intro="header-link"
-                className="hover:text-primary dark:hover:text-[#FDD663] transition-colors"
+                className="hover:text-[#1B1C19] dark:hover:text-[#FDD663] transition-colors"
               >
                 Anti-Proxy System
               </a>
               <a
                 href="#rooms"
                 data-intro="header-link"
-                className="hover:text-primary dark:hover:text-[#FDD663] transition-colors"
+                className="hover:text-[#1B1C19] dark:hover:text-[#FDD663] transition-colors"
               >
                 Free Rooms
               </a>
@@ -112,7 +113,7 @@ export default function LandingPage() {
               <ThemeToggle className="scale-95" />
 
               {user ? (
-                <Link
+                <JitterHeaderButton
                   href={
                     user.role === 'STUDENT'
                       ? '/student'
@@ -120,19 +121,17 @@ export default function LandingPage() {
                       ? '/faculty'
                       : '/admin'
                   }
-                  className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container dark:hover:bg-[#86724f] text-xs sm:text-sm font-medium shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  icon={<ArrowRight className="w-3.5 h-3.5" />}
                 >
-                  <span>Dashboard</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                  Dashboard
+                </JitterHeaderButton>
               ) : (
-                <Link
+                <JitterHeaderButton
                   href="/login"
-                  className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container dark:hover:bg-[#86724f] text-xs sm:text-sm font-medium shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  icon={<ArrowRight className="w-3.5 h-3.5" />}
                 >
-                  <span>Sign In</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                  Sign In
+                </JitterHeaderButton>
               )}
             </div>
           </div>

@@ -11,9 +11,9 @@ export class SpeechService {
   private static recognitionInstance: any = null;
   private static isMuted: boolean = false;
   private static lastTranscript: string = '';
-  private static retryCount: number = 0;
-  private static maxRetries: number = 2;
   private static isUserIntentionallyListening: boolean = false;
+  private static silenceTimer: any = null;
+  private static readonly SILENCE_DURATION_MS: number = 4000; // 4 seconds break to submit
 
   public static isRecognitionSupported(): boolean {
     if (typeof window === 'undefined') return false;
@@ -47,13 +47,32 @@ export class SpeechService {
       return false;
     }
 
-    // Stop ongoing operations
+    // Stop ongoing speech & clear previous timers
     SpeechService.stopSpeaking();
+    SpeechService.clearSilenceTimer();
     SpeechService.isUserIntentionallyListening = true;
-    SpeechService.retryCount = 0;
     SpeechService.lastTranscript = '';
 
     return SpeechService.initRecognition(callbacks);
+  }
+
+  private static clearSilenceTimer(): void {
+    if (SpeechService.silenceTimer) {
+      clearTimeout(SpeechService.silenceTimer);
+      SpeechService.silenceTimer = null;
+    }
+  }
+
+  private static restartSilenceTimer(callbacks: SpeechRecognitionCallbacks): void {
+    SpeechService.clearSilenceTimer();
+    // Wait for a 4-second break before finalizing and submitting
+    SpeechService.silenceTimer = setTimeout(() => {
+      if (SpeechService.isUserIntentionallyListening && SpeechService.lastTranscript.trim()) {
+        const textToSubmit = SpeechService.lastTranscript.trim();
+        SpeechService.stopListening();
+        callbacks.onResult?.(textToSubmit, true);
+      }
+    }, SpeechService.SILENCE_DURATION_MS);
   }
 
   private static initRecognition(callbacks: SpeechRecognitionCallbacks): boolean {
@@ -76,23 +95,23 @@ export class SpeechService {
 
       const recognition = new SpeechRecognitionClass();
 
-      // continuous = true prevents immediate cut-off while user thinks or speaks slowly
+      // Continuous mode keeps the microphone listening continuously until user takes a 4-sec break
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.maxAlternatives = 3;
-
-      // Use generic en-US or navigator language
+      recognition.maxAlternatives = 1;
       recognition.lang = 'en-US';
 
       recognition.onstart = () => {
         callbacks.onStart?.();
+        // Start silence timer when recognition starts
+        SpeechService.restartSilenceTimer(callbacks);
       };
 
       recognition.onresult = (event: any) => {
         let interimTranscript = '';
         let finalTranscript = '';
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        for (let i = 0; i < event.results.length; ++i) {
           const item = event.results[i];
           const text = item[0]?.transcript || '';
           if (item.isFinal) {
@@ -102,17 +121,13 @@ export class SpeechService {
           }
         }
 
-        const candidate = (finalTranscript || interimTranscript).trim();
-        if (candidate) {
-          SpeechService.lastTranscript = candidate;
-        }
-
-        if (finalTranscript.trim()) {
-          // Received completed phrase!
-          callbacks.onResult?.(finalTranscript.trim(), true);
-          SpeechService.stopListening();
-        } else if (interimTranscript.trim()) {
-          callbacks.onResult?.(interimTranscript.trim(), false);
+        const currentCandidate = (finalTranscript + interimTranscript).trim();
+        if (currentCandidate) {
+          SpeechService.lastTranscript = currentCandidate;
+          // Deliver live candidate (isFinal = false so UI updates live without auto-submitting)
+          callbacks.onResult?.(currentCandidate, false);
+          // User spoke! Reset the 4-second break timer
+          SpeechService.restartSilenceTimer(callbacks);
         }
       };
 
@@ -120,70 +135,45 @@ export class SpeechService {
         const errType = event.error;
         console.warn('SpeechRecognition error:', errType);
 
-        if (errType === 'no-speech') {
-          // If we had gathered some speech, deliver it!
-          if (SpeechService.lastTranscript.trim()) {
-            callbacks.onResult?.(SpeechService.lastTranscript.trim(), true);
-            SpeechService.stopListening();
-            return;
-          }
-
-          // If the browser simply timed out waiting for audio without receiving data yet,
-          // automatically retry once if the user is still in listening state
-          if (SpeechService.isUserIntentionallyListening && SpeechService.retryCount < SpeechService.maxRetries) {
-            SpeechService.retryCount++;
-            setTimeout(() => {
-              if (SpeechService.isUserIntentionallyListening) {
-                SpeechService.initRecognition(callbacks);
-              }
-            }, 250);
-            return;
-          }
-
-          callbacks.onError?.('No voice input received. Check your system microphone settings or type your question below.');
+        if (errType === 'no-speech' || errType === 'aborted') {
+          // Normal background pause or manual stop; do not abort user session
           return;
         }
 
         if (errType === 'not-allowed') {
-          callbacks.onError?.('Microphone access was blocked. Please click the icon in your address bar to allow microphone access.');
+          SpeechService.clearSilenceTimer();
+          callbacks.onError?.('Microphone access was blocked. Please allow microphone permission in your browser address bar.');
           return;
         }
 
         if (errType === 'audio-capture') {
+          SpeechService.clearSilenceTimer();
           callbacks.onError?.('No working microphone found on your device.');
           return;
         }
 
-        if (errType === 'aborted') {
-          // 'aborted' occurs normally when recognition is stopped or when sending a query.
-          // Do not treat as an error.
-          return;
-        }
-
         if (errType === 'network') {
-          callbacks.onError?.('Speech recognition network error. Please verify your internet connection.');
+          // If network glitch occurs but we have captured words, don't crash
           return;
         }
-
-        callbacks.onError?.(`Speech recognition error: ${errType}`);
       };
 
       recognition.onend = () => {
-        // If recognition closed and we have an unfinalized transcript
-        if (SpeechService.isUserIntentionallyListening && SpeechService.lastTranscript.trim()) {
-          callbacks.onResult?.(SpeechService.lastTranscript.trim(), true);
-          SpeechService.stopListening();
-        } else if (SpeechService.isUserIntentionallyListening && SpeechService.retryCount < SpeechService.maxRetries) {
-          SpeechService.retryCount++;
-          setTimeout(() => {
-            if (SpeechService.isUserIntentionallyListening) {
-              SpeechService.initRecognition(callbacks);
+        // If the browser closed recognition automatically but user is still in listening mode,
+        // seamlessly revive it unless the 4-second silence timer already decided to submit
+        if (SpeechService.isUserIntentionallyListening) {
+          try {
+            recognition.start();
+            return;
+          } catch {
+            // If restart failed, fallback to submitting if transcript exists
+            if (SpeechService.lastTranscript.trim()) {
+              callbacks.onResult?.(SpeechService.lastTranscript.trim(), true);
             }
-          }, 250);
-        } else {
-          SpeechService.isUserIntentionallyListening = false;
-          callbacks.onEnd?.();
+          }
         }
+        SpeechService.clearSilenceTimer();
+        callbacks.onEnd?.();
       };
 
       SpeechService.recognitionInstance = recognition;
@@ -198,6 +188,7 @@ export class SpeechService {
 
   public static stopListening(): void {
     SpeechService.isUserIntentionallyListening = false;
+    SpeechService.clearSilenceTimer();
     if (SpeechService.recognitionInstance) {
       try {
         SpeechService.recognitionInstance.abort();
