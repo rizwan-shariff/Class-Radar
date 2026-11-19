@@ -16,11 +16,9 @@ export interface SubmissionsDependencies {
   };
   section: {
     findUnique(args: any): Promise<any>;
-    findMany(args?: any): Promise<any[]>;
   };
   subject: {
     findUnique(args: any): Promise<any>;
-    findMany(args?: any): Promise<any[]>;
   };
 }
 
@@ -73,8 +71,8 @@ export const registerSubmissionsRoutes = (
    */
   app.get('/api/v1/submissions/meta', { preHandler: authMiddleware }, async (_request, reply) => {
     const [sections, subjects] = await Promise.all([
-      deps.section.findMany ? deps.section.findMany() : [],
-      deps.subject.findMany ? deps.subject.findMany() : [],
+      deps.section.findMany ? deps.section.findMany({ orderBy: { name: 'asc' } }) : [],
+      deps.subject.findMany ? deps.subject.findMany({ orderBy: { code: 'asc' } }) : [],
     ]);
     return reply.send({ sections, subjects });
   });
@@ -314,10 +312,10 @@ export const registerSubmissionsRoutes = (
         urgency = 'EXPIRED';
         countdown = 'Deadline Passed';
       } else {
-        const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
 
-        if (diffHours <= 24) {
+        if (diffHours < 24) {
           urgency = 'CRITICAL';
           const dueTimeStr = new Date(d.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           countdown = `Due Today at ${dueTimeStr}`;
@@ -339,3 +337,4 @@ export const registerSubmissionsRoutes = (
     return reply.send(formatted);
   });
 };
+

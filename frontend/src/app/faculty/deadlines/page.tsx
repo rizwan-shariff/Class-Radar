@@ -421,11 +421,13 @@ export default function FacultyDeadlinesPage() {
                     className="w-full p-2.5 rounded-xl border border-[#CFC5B8]/60 dark:border-white/10 bg-white dark:bg-[#25262B] text-[#1B1C19] dark:text-[#E8EAED]"
                     required
                   >
-                    {meta?.subjects?.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.code} - {s.name}
-                      </option>
-                    ))}
+                    {meta?.subjects
+                      ?.filter((s) => !['PROCTOR', 'NSS_PE'].includes(s.code))
+                      ?.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.code} - {s.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
