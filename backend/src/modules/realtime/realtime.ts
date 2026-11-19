@@ -52,8 +52,11 @@ export const attachRealtime = (
   deps: RealtimeDependencies,
   redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379',
 ): SocketIOServer => {
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : true;
   const io = new SocketIOServer(app.server, {
-    cors: { origin: '*' },
+    cors: { origin: allowedOrigins },
     transports: ['websocket', 'polling'],
   });
 

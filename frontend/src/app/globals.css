@@ -278,3 +278,69 @@ html.dark [class*="text-[#93000A]"] {
   color: #FCA5A5 !important;
   font-weight: 700;
 }
+
+/* Landing Cinematic Intro Styles */
+[data-intro="hero-bg"] {
+  transform-origin: 51% 31%;
+  clip-path: circle(7% at 51% 31%);
+  transform: scale(2.2);
+  filter: blur(14px) brightness(0.4);
+}
+
+
+[data-intro="hero-scrim"] {
+  opacity: 0;
+}
+
+[data-intro="header-logo"],
+[data-intro="header-link"],
+[data-intro="header-action"],
+[data-intro="hero-badge"],
+[data-intro="hero-subtitle"],
+[data-intro="hero-cta"],
+[data-intro="hero-card"] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+[data-intro="header-logo"],
+[data-intro="header-link"],
+[data-intro="header-action"] {
+  transform: translateY(-16px);
+}
+
+[data-intro="hero-badge"] {
+  transform: scale(0.92);
+}
+
+[data-intro="hero-word"] {
+  display: inline-block;
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(24px);
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(32px);
+}
+
+/* Fallback for no-js */
+noscript [data-intro],
+noscript [data-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+  clip-path: none !important;
+  filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-intro],
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    filter: none !important;
+  }
+}
+

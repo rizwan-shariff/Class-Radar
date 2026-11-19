@@ -7,11 +7,5 @@ allowBuilds:
   '@prisma/engines': true
   bcrypt: true
   esbuild: true
+  ngrok: true
   prisma: true
-
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - bcrypt
-  - esbuild
-  - prisma
