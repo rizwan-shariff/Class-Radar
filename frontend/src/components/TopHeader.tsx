@@ -21,7 +21,9 @@ import {
   Shield,
   Sparkles,
   History,
-  Users
+  Users,
+  FileCheck2,
+  Clock
 } from 'lucide-react';
 
 export function TopHeader() {
@@ -43,6 +45,7 @@ export function TopHeader() {
       { label: "Today's Schedule", href: '/student', icon: <Calendar className="w-4 h-4" /> },
       { label: 'Weekly Timetable', href: '/student/timetable', icon: <BookOpen className="w-4 h-4" /> },
       { label: 'Attendance & Compliance', href: '/student/attendance', icon: <UserCheck className="w-4 h-4" /> },
+      { label: 'Deadlines', href: '/student/deadlines', icon: <FileCheck2 className="w-4 h-4" /> },
       { label: 'Community Feed', href: '/student/threads', icon: <Users className="w-4 h-4" /> },
       { label: 'Free Rooms', href: '/rooms', icon: <Search className="w-4 h-4" /> },
     ];
@@ -50,6 +53,7 @@ export function TopHeader() {
     desktopNav = [
       { label: "Teaching Schedule", href: '/faculty', icon: <Calendar className="w-4 h-4" /> },
       { label: 'QR Attendance Session', href: '/faculty/session', icon: <QrCode className="w-4 h-4" /> },
+      { label: 'Deadlines & Projects', href: '/faculty/deadlines', icon: <FileCheck2 className="w-4 h-4" /> },
       { label: 'Attendance History', href: '/faculty/history', icon: <History className="w-4 h-4" /> },
       { label: 'Free Room Finder', href: '/rooms', icon: <Search className="w-4 h-4" /> },
     ];
