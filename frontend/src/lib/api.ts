@@ -85,6 +85,39 @@ export interface SubstituteSuggestion {
   suggestedRoom: { id: string; name: string; capacity: number };
 }
 
+export interface SubmissionDeadline {
+  id: string;
+  subjectId: string;
+  sectionId: string;
+  facultyId: string;
+  title: string;
+  description?: string | null;
+  dueDate: string;
+  isFinalized: boolean;
+  finalizedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  status?: 'DRAFT' | 'FINALIZED' | 'EXPIRED';
+  urgency?: 'NORMAL' | 'URGENT' | 'CRITICAL' | 'EXPIRED';
+  countdown?: string;
+  subject?: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  section?: {
+    id: string;
+    name: string;
+    department: string;
+    semester: number;
+  };
+  faculty?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('classradar_token');
@@ -319,5 +352,43 @@ export const api = {
           records: Array<{ date: string; status: string; subjectCode?: string }>;
         }>
       >('/attendance/faculty-matrix'),
+  },
+
+  submissions: {
+    getMeta: () =>
+      request<{
+        sections: Array<{ id: string; name: string; department: string; semester: number }>;
+        subjects: Array<{ id: string; code: string; name: string }>;
+      }>('/submissions/meta'),
+    create: (data: {
+      subjectId: string;
+      sectionId: string;
+      title: string;
+      description?: string | null;
+      dueDate: string;
+    }) =>
+      request<SubmissionDeadline>('/submissions/deadlines', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (
+      id: string,
+      data: {
+        title?: string;
+        description?: string | null;
+        dueDate?: string;
+        extendReason?: string;
+      }
+    ) =>
+      request<SubmissionDeadline>(`/submissions/deadlines/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    finalize: (id: string) =>
+      request<SubmissionDeadline>(`/submissions/deadlines/${id}/finalize`, {
+        method: 'PATCH',
+      }),
+    listFaculty: () => request<SubmissionDeadline[]>('/submissions/deadlines/faculty'),
+    listStudent: () => request<SubmissionDeadline[]>('/submissions/deadlines/student'),
   },
 };

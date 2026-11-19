@@ -19,7 +19,9 @@ import {
   TrendingUp,
   Flame,
   ChevronRight,
-  Layers
+  Layers,
+  FileCheck2,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -49,6 +51,23 @@ export default function StudentDashboardPage() {
   const { data: attendanceSummary } = useQuery({
     queryKey: ['student-attendance-summary'],
     queryFn: () => api.attendance.summary(),
+  });
+
+  const { data: deadlines, refetch: refetchDeadlines } = useQuery({
+    queryKey: ['student-deadlines'],
+    queryFn: () => api.submissions.listStudent(),
+  });
+
+  // Listen to realtime changes for student section
+  useSocket({
+    'deadline:finalized': (payload: any) => {
+      refetchDeadlines();
+      setLiveToast(`New Deadline Finalized: ${payload?.title || 'Assignment'} (${payload?.subjectCode || ''})`);
+      setTimeout(() => setLiveToast(null), 5000);
+    },
+    'deadline:updated': () => {
+      refetchDeadlines();
+    },
   });
 
   // Calculate high-level attendance metric
@@ -272,6 +291,66 @@ export default function StudentDashboardPage() {
 
         {/* Right Column: Attendance Overview & Free Rooms Widget (Span 4 on desktop) */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Upcoming Submission Deadlines Widget */}
+          <div className="glass-panel rounded-3xl p-6 border border-[#CFC5B8]/60 shadow-md space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-4 h-4 text-[#86724F]" />
+                <h3 className="text-sm font-bold text-[#1B1C19]">Submission Deadlines</h3>
+              </div>
+              <Link
+                href="/student/deadlines"
+                className="text-[11px] font-bold text-[#6C5939] hover:underline flex items-center gap-0.5"
+              >
+                <span>View All</span>
+                <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {deadlines && deadlines.length > 0 ? (
+              <div className="space-y-2.5">
+                {deadlines.slice(0, 3).map((d) => (
+                  <div
+                    key={d.id}
+                    className="p-3 rounded-2xl bg-white/80 border border-[#CFC5B8]/50 shadow-xs space-y-1.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-bold text-[#6C5939] uppercase">
+                          {d.subject?.code}
+                        </span>
+                        <h4 className="text-xs font-bold text-[#1B1C19] line-clamp-1">{d.title}</h4>
+                      </div>
+                      <span
+                        className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                          d.urgency === 'CRITICAL'
+                            ? 'bg-red-100 text-red-700'
+                            : d.urgency === 'URGENT'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-[#EAE8E3] text-[#6C5939]'
+                        }`}
+                      >
+                        {d.countdown}
+                      </span>
+                    </div>
+
+                    <div className="text-[10px] text-[#7E766B] flex items-center justify-between pt-1 border-t border-[#CFC5B8]/30">
+                      <span>Due {new Date(d.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                      <span className="flex items-center gap-1 font-semibold text-emerald-700">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>Finalized</span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-white/40 border border-dashed border-[#CFC5B8]/50 text-center">
+                <p className="text-xs font-semibold text-[#1B1C19]">No pending submissions</p>
+                <p className="text-[10px] text-[#7E766B] mt-0.5">All course project milestones are up to date.</p>
+              </div>
+            )}
+          </div>
           {/* Attendance Health Gauge Card */}
           <div className="glass-panel rounded-3xl p-6 border border-[#CFC5B8]/60 shadow-md space-y-5">
             <div className="flex items-center justify-between">
