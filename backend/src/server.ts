@@ -73,6 +73,11 @@ export const buildServer = (
   void app.register(multipart);
   void app.register(rateLimit, { global: false });
 
+  app.get('/api/v1/health', async () => ({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  }));
+
   // Register route modules
   registerAuthRoutes(app, dependencies);
   const moduleDependencies = makePrismaDeps(prisma);
