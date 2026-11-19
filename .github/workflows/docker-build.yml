@@ -1,0 +1,28 @@
+name: Docker Container Build Verification
+
+on:
+  pull_request:
+    paths:
+      - 'docker/**'
+      - 'frontend/**'
+      - 'backend/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+jobs:
+  docker-validation:
+    name: Validate Docker Compose & Image Builds
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image
+        run: docker build -t classradar-backend:ci -f docker/Dockerfile.backend .
+
+      - name: Build Frontend Docker Image
+        run: docker build -t classradar-frontend:ci -f docker/Dockerfile.frontend .
