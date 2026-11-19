@@ -145,7 +145,7 @@ export function ChatbotWidget() {
     }
   };
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (isListening) {
       SpeechService.stopListening();
       setIsListening(false);
@@ -158,14 +158,14 @@ export function ChatbotWidget() {
     SpeechService.stopSpeaking();
     setIsSpeaking(false);
 
-    const success = SpeechService.startListening({
+    const success = await SpeechService.startListening({
       onStart: () => {
         setIsListening(true);
         setInterimTranscript('');
       },
       onResult: (transcript, isFinal) => {
         setInterimTranscript(transcript);
-        if (isFinal) {
+        if (isFinal && transcript.trim()) {
           setIsListening(false);
           handleSendPrompt(transcript);
         }
