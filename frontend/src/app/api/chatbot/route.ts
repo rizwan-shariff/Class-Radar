@@ -21,16 +21,17 @@ User Info:
 - Department: ${user?.department || 'CSE'}
 - Active Section: ${user?.sectionId ? 'CSE-3F' : 'N/A'}
 
-Live Context & Academic Data:
+Live Context & Complete Academic Data:
 ${context || 'No specific live context.'}
 
 Role Capabilities & Permissions:
-- If user is STUDENT: They can check schedules, live attendance percentages, bunk limits, upcoming assignment & project submission deadlines, free campus rooms, and launch the QR scanner. If they ask about submissions or deadlines, explain their exact deadlines, due dates, subjects, urgency status, and remind them that they can view/open their submissions directly.
+- If user is STUDENT: They can check schedules (today, tomorrow, or any weekday Monday through Saturday), live attendance percentages, bunk limits, upcoming assignment & project submission deadlines, free campus rooms, and launch the QR scanner. If they ask about lectures, schedules, tomorrow's classes, or today's timetable, use the Timetable data in the Live Context to answer directly and accurately.
 - If user is FACULTY: They can manage teaching schedules, launch QR sessions, mark absences, find free rooms, and manage/finalize/extend assignment & project submission deadlines.
 - 75% Rule: Institutional attendance threshold is 75%. If below, advise attending consecutive lectures.
 
 Instructions:
 Answer accurately, helpfully, and concisely in 2 to 4 sentences using the provided Live Context data. Address the user directly by first name.
+Do not say you do not have access if the information is provided in the Live Context.
 Do not output code blocks or markdown tables. Keep it conversational, confident, and informative.`;
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
@@ -50,6 +51,8 @@ Do not output code blocks or markdown tables. Keep it conversational, confident,
       }),
     });
 
+    console.log('NVIDIA NIM Response Status:', response.status);
+
     if (!response.ok) {
       const errText = await response.text();
       console.error('NVIDIA NIM API Error:', errText);
@@ -60,6 +63,7 @@ Do not output code blocks or markdown tables. Keep it conversational, confident,
     }
 
     const data = await response.json();
+    console.log('NVIDIA NIM Choices:', JSON.stringify(data.choices?.[0]?.message));
     const content = data.choices?.[0]?.message?.content || '';
 
     // Route detection based on keywords in user prompt
@@ -86,8 +90,8 @@ Do not output code blocks or markdown tables. Keep it conversational, confident,
     } else if (q.includes('scan') || q.includes('qr')) {
       detectedRoute = user?.role === 'FACULTY' ? '/faculty/session' : '/student/scan';
       detectedLabel = user?.role === 'FACULTY' ? 'Launch QR Session' : 'Open Scanner';
-    } else if (q.includes('schedule') || q.includes('class') || q.includes('lecture') || q.includes('timetable')) {
-      detectedRoute = user?.role === 'FACULTY' ? '/faculty' : '/student';
+    } else if (q.includes('schedule') || q.includes('class') || q.includes('lecture') || q.includes('timetable') || q.includes('tomorrow') || q.includes('today')) {
+      detectedRoute = user?.role === 'FACULTY' ? '/faculty' : '/student/timetable';
       detectedLabel = 'View Timetable';
     } else if (user?.role === 'ADMIN' && (q.includes('analytic') || q.includes('stat'))) {
       detectedRoute = '/admin';
@@ -106,8 +110,8 @@ Do not output code blocks or markdown tables. Keep it conversational, confident,
       .trim();
 
     return NextResponse.json({
-      displayText: content || 'I have analyzed your academic query.',
-      spokenText: cleanSpoken || 'I have analyzed your academic query.',
+      displayText: content || 'Here is the academic information you requested.',
+      spokenText: cleanSpoken || 'Here is the academic information you requested.',
       route: detectedRoute,
       actionLabel: detectedLabel,
     });

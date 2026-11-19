@@ -101,15 +101,53 @@ export class RoleIntentHandler {
     try {
       let liveContext = '';
 
+      // Academic term reference dates for Monday-Saturday (Week of Nov 9-14, 2026)
+      const weekDates = [
+        { day: 'Monday', date: '2026-11-09' },
+        { day: 'Tuesday', date: '2026-11-10' },
+        { day: 'Wednesday', date: '2026-11-11' },
+        { day: 'Thursday', date: '2026-11-12' },
+        { day: 'Friday', date: '2026-11-13' },
+        { day: 'Saturday', date: '2026-11-14' },
+      ];
+
+      // Determine today's day of week & tomorrow's day of week
+      const now = new Date();
+      const currentDayIndex = now.getDay(); // 0 = Sun, 1 = Mon ... 4 = Thu ... 6 = Sat
+      const todayDate = weekDates[Math.max(0, currentDayIndex - 1)]?.date || '2026-11-12';
+      const tomorrowIndex = currentDayIndex === 6 ? 0 : currentDayIndex + 1;
+      const tomorrowDate =
+        tomorrowIndex >= 1 && tomorrowIndex <= 6
+          ? weekDates[tomorrowIndex - 1].date
+          : '2026-11-09'; // Default to Monday if tomorrow is Sunday
+
       if (role === 'STUDENT') {
-        const [todaySlots, attendance, allRooms, deadlines] = await Promise.all([
-          api.timetable.me('2026-11-09').catch(() => []),
+        const [todaySlots, tomorrowSlots, attendance, allRooms, deadlines] = await Promise.all([
+          api.timetable.me(todayDate).catch(() => []),
+          api.timetable.me(tomorrowDate).catch(() => []),
           api.attendance.summary().catch(() => []),
           api.rooms.all().catch(() => []),
           api.submissions.listStudent().catch(() => []),
         ]);
 
+        const formatSlots = (slots: typeof todaySlots) =>
+          slots.length > 0
+            ? slots
+                .sort((a, b) => a.period - b.period)
+                .map(
+                  (s) =>
+                    `- Period ${s.period}: ${s.subjectCode} (${s.subjectName || ''}) in ${s.roomName || 'Room 406'}`
+                )
+                .join('\n')
+            : 'No lectures scheduled.';
+
         liveContext = `
+STUDENT TIMETABLE (TODAY):
+${formatSlots(todaySlots)}
+
+STUDENT TIMETABLE (TOMORROW):
+${formatSlots(tomorrowSlots)}
+
 STUDENT LIVE SUBMISSION DEADLINES & ASSIGNMENTS:
 ${
   deadlines && deadlines.length > 0
@@ -142,29 +180,37 @@ ${
     : 'No attendance data yet.'
 }
 
-STUDENT TODAY'S TIMETABLE (6-8 Periods):
-${
-  todaySlots.length > 0
-    ? todaySlots
-        .sort((a, b) => a.period - b.period)
-        .map((s) => `- Period ${s.period}: ${s.subjectCode} (${s.subjectName || ''}) in ${s.roomName || 'Room 406'}`)
-        .join('\n')
-    : 'No classes scheduled.'
-}
-
 CAMPUS ROOMS:
 ${allRooms.length} rooms tracked (${allRooms.filter((r) => r.type === 'LAB').length} computer labs, ${allRooms.filter((r) => r.type === 'CLASSROOM').length} classrooms).
 `;
       } else if (role === 'FACULTY') {
-        const [todaySlots, allRooms, facultyDeadlines] = await Promise.all([
-          api.timetable.me('2026-11-09').catch(() => []),
+        const [todaySlots, tomorrowSlots, allRooms, facultyDeadlines] = await Promise.all([
+          api.timetable.me(todayDate).catch(() => []),
+          api.timetable.me(tomorrowDate).catch(() => []),
           api.rooms.all().catch(() => []),
           api.submissions.listFaculty().catch(() => [] as SubmissionDeadline[]),
         ]);
 
         const allDeadlinesList = Array.isArray(facultyDeadlines) ? facultyDeadlines : [];
 
+        const formatSlots = (slots: typeof todaySlots) =>
+          slots.length > 0
+            ? slots
+                .sort((a, b) => a.period - b.period)
+                .map(
+                  (s) =>
+                    `- Period ${s.period}: ${s.subjectCode} (${s.subjectName || ''}) in ${s.roomName || 'Room 406'}`
+                )
+                .join('\n')
+            : 'No lectures scheduled.';
+
         liveContext = `
+FACULTY TEACHING SCHEDULE (TODAY):
+${formatSlots(todaySlots)}
+
+FACULTY TEACHING SCHEDULE (TOMORROW):
+${formatSlots(tomorrowSlots)}
+
 FACULTY MANAGED SUBMISSION DEADLINES:
 ${
   allDeadlinesList.length > 0
@@ -177,16 +223,6 @@ ${
         )
         .join('\n')
     : 'No deadlines created yet.'
-}
-
-FACULTY TEACHING SCHEDULE:
-${
-  todaySlots.length > 0
-    ? todaySlots
-        .sort((a, b) => a.period - b.period)
-        .map((s) => `- Period ${s.period}: ${s.subjectCode} (${s.subjectName || ''}) in ${s.roomName || 'Room 406'}`)
-        .join('\n')
-    : 'No teaching lectures scheduled today.'
 }
 
 CAMPUS ROOMS:
