@@ -10,6 +10,18 @@ export interface AttendanceDependencies {
   };
   slot: {
     findUnique(args: { where: { id: string }; include?: any }): Promise<any>;
+    findFirst(args: { where: any; include?: any }): Promise<any>;
+    create(args: { data: any }): Promise<any>;
+  };
+  section?: {
+    findFirst(args: { where: any }): Promise<any>;
+  };
+  subject?: {
+    findMany(args?: any): Promise<any[]>;
+    findFirst(args: { where?: any }): Promise<any>;
+  };
+  room?: {
+    findFirst(args: { where?: any }): Promise<any>;
   };
   attendanceSession: {
     create(args: { data: any }): Promise<any>;
@@ -24,12 +36,13 @@ export interface AttendanceDependencies {
     findMany(args?: { where?: any; include?: any; orderBy?: any }): Promise<any[]>;
     update(args: { where: { id: string }; data: any }): Promise<any>;
   };
-  subject: {
-    findMany(args?: any): Promise<any[]>;
-  };
 }
 
 const getJwtSecret = (): string => process.env.JWT_SECRET || 'dev_jwt_secret_classradar_2026';
+const activeQrBeacons = new Map<string, number>();
+export const clearActiveQrBeacons = (): void => {
+  activeQrBeacons.clear();
+};
 
 export const registerAttendanceRoutes = (
   app: FastifyInstance,
@@ -43,7 +56,11 @@ export const registerAttendanceRoutes = (
       }
       const token = header.slice(7);
       const decoded = jwt.verify(token, getJwtSecret()) as { sub: string; role: string };
-      (request as any).user = { id: decoded.sub, role: decoded.role };
+      (request as any).user = {
+        id: decoded.sub,
+        role: decoded.role,
+        sectionId: (decoded as { sectionId?: string | null }).sectionId ?? null,
+      };
     } catch {
       return reply.status(401).send({ error: 'Invalid or expired token' });
     }
@@ -55,29 +72,122 @@ export const registerAttendanceRoutes = (
    */
   app.post('/api/v1/attendance/sessions', { preHandler: auth }, async (request, reply) => {
     const user = (request as any).user;
-    const body = z
+    if (!['FACULTY', 'ADMIN'].includes(user.role)) {
+      return reply.status(403).send({ error: 'Only faculty or admins can launch attendance' });
+    }
+    const parsedBody = z
       .object({
-        slotId: z.string(),
+        slotId: z.string().optional(),
+        sectionId: z.string().optional(),
+        period: z.number().int().min(1).max(8).optional(),
         date: z.string(),
       })
-      .parse(request.body);
+      .safeParse(request.body);
+    if (!parsedBody.success) {
+      return reply.status(400).send({
+        error: { code: 'BAD_REQUEST', message: 'Invalid attendance session payload' },
+      });
+    }
+    const body = parsedBody.data;
 
-    const slot = await deps.slot.findUnique({
-      where: { id: body.slotId },
-    });
+    let slot = body.slotId
+      ? await deps.slot.findUnique({ where: { id: body.slotId } })
+      : null;
+
+    if (!slot && body.sectionId && body.period) {
+      slot = await deps.slot.findFirst({
+        where: { sectionId: body.sectionId, period: body.period },
+        include: { section: true, subject: true, room: true },
+      });
+      if (!slot) {
+        slot = await deps.slot.findFirst({
+          where: { sectionId: body.sectionId },
+          include: { section: true, subject: true, room: true },
+        });
+      }
+    }
+
+    if (!slot && body.period) {
+      slot = await deps.slot.findFirst({
+        where: { period: body.period },
+        include: { section: true, subject: true, room: true },
+      });
+    }
 
     if (!slot) {
-      return reply.status(404).send({ error: 'Slot not found' });
+      slot = await deps.slot.findFirst({
+        where: { facultyId: user.id },
+        include: { section: true, subject: true, room: true },
+      });
+    }
+
+    if (!slot) {
+      const section = body.sectionId
+        ? await deps.section?.findFirst({ where: { id: body.sectionId } })
+        : await deps.section?.findFirst({ where: {} });
+      const subject = await deps.subject?.findFirst({ where: {} });
+      const room = await deps.room?.findFirst({ where: {} });
+
+      if (!section || !subject || !room || !body.period) {
+        return reply.status(422).send({
+          error: {
+            code: 'NO_ADHOC_SLOT_CONTEXT',
+            message: 'Select a period and ensure a section, subject, and room are available.',
+          },
+        });
+      }
+
+      const weekday = new Date(body.date).getUTCDay();
+      const normalizedWeekday = weekday === 0 ? 6 : weekday;
+      slot = await deps.slot.create({
+        data: {
+          sectionId: section.id,
+          subjectId: subject.id,
+          facultyId: user.id,
+          roomId: room.id,
+          weekday: normalizedWeekday,
+          period: body.period,
+        },
+      });
+      slot = await deps.slot.findUnique({
+        where: { id: slot.id },
+      });
     }
 
     const session = await deps.attendanceSession.create({
       data: {
-        slotId: body.slotId,
+        slotId: slot.id,
         date: new Date(body.date),
         startedById: user.id,
         status: 'OPEN',
       },
     });
+
+    if (slot.sectionId) {
+      emitToRoom(`section:${slot.sectionId}`, 'attendance:started', {
+        sessionId: session.id,
+        slotId: slot.id,
+        period: slot.period,
+        subjectName: slot.subject?.name,
+        roomName: slot.room?.name,
+        facultyName: slot.faculty?.name,
+      });
+
+      const students = await deps.user.findMany({
+        where: { role: 'STUDENT', sectionId: slot.sectionId },
+        select: { id: true },
+      });
+      for (const student of students) {
+        emitToRoom(`user:${student.id}`, 'attendance:started', {
+          sessionId: session.id,
+          slotId: slot.id,
+          period: slot.period,
+          subjectName: slot.subject?.name,
+          roomName: slot.room?.name,
+          facultyName: slot.faculty?.name,
+        });
+      }
+    }
 
     return reply.status(201).send({
       id: session.id,
@@ -88,7 +198,7 @@ export const registerAttendanceRoutes = (
 
   /**
    * GET /api/v1/attendance/sessions/:id/token
-   * Generates a 15-second rotating cryptographic attendance token
+   * Generates a 5-second rotating cryptographic attendance token
    */
   app.get('/api/v1/attendance/sessions/:id/token', { preHandler: auth }, async (request, reply) => {
     const { id } = z.object({ id: z.string() }).parse(request.params);
@@ -99,7 +209,7 @@ export const registerAttendanceRoutes = (
     }
 
     const nonce = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const expiresAt = new Date(Date.now() + 20000); // 20s validity
+    const expiresAt = new Date(Date.now() + 20000); // 20s acceptance window
     const token = jwt.sign(
       {
         sessionId: session.id,
@@ -109,6 +219,7 @@ export const registerAttendanceRoutes = (
       getJwtSecret(),
       { expiresIn: '20s' },
     );
+    activeQrBeacons.set(session.id, Date.now());
 
     return reply.send({ token, expiresAt: expiresAt.toISOString() });
   });
@@ -119,6 +230,10 @@ export const registerAttendanceRoutes = (
    */
   app.get('/api/v1/attendance/sessions/:id/records', { preHandler: auth }, async (request, reply) => {
     const { id } = z.object({ id: z.string() }).parse(request.params);
+    const session = await deps.attendanceSession.findUnique({
+      where: { id },
+      include: { slot: true },
+    });
     const records = await deps.attendanceRecord.findMany({
       where: { sessionId: id },
       include: {
@@ -128,16 +243,35 @@ export const registerAttendanceRoutes = (
       },
       orderBy: { markedAt: 'desc' },
     });
+    const sectionFilter = session?.slot?.sectionId
+      ? { role: 'STUDENT', sectionId: session.slot.sectionId }
+      : { role: 'STUDENT' };
+    const sectionStudents = await deps.user.findMany({ where: sectionFilter });
+    const recordByStudent = new Map(records.map((record: any) => [record.studentId, record]));
+    const presentCount = records.filter((r: any) => r.status === 'PRESENT').length;
+    const absentCount = session?.status === 'CLOSED'
+      ? sectionStudents.filter((student: any) => recordByStudent.get(student.id)?.status === 'ABSENT').length
+      : Math.max(0, sectionStudents.length - presentCount);
+    const totalStudents = sectionStudents.length;
 
-    return reply.send(
-      records.map((r: any) => ({
-        studentId: r.studentId,
-        studentName: r.student?.name || 'Verified Student',
-        studentEmail: r.student?.email || '',
-        markedAt: r.markedAt,
-        method: r.method,
-      }))
-    );
+    const fullRoll = sectionStudents.map((student: any) => {
+      const record = recordByStudent.get(student.id);
+      return {
+        studentId: student.id,
+        studentName: record?.student?.name || student.name || 'Student',
+        studentEmail: record?.student?.email || student.email || '',
+        markedAt: record?.markedAt || null,
+        method: record?.method || 'SYSTEM',
+        status: record?.status || (session?.status === 'CLOSED' ? 'ABSENT' : 'PENDING'),
+      };
+    });
+
+    return reply.send({
+      presentCount,
+      totalStudents,
+      absentCount,
+      records: fullRoll,
+    });
   });
 
   /**
@@ -157,36 +291,37 @@ export const registerAttendanceRoutes = (
       return reply.status(404).send({ error: 'Session not found' });
     }
 
-    // Update session status to CLOSED
+    const sectionId = session.slot?.sectionId;
+    const sectionFilter = sectionId
+      ? { role: 'STUDENT', sectionId }
+      : { role: 'STUDENT' };
+    const sectionStudents = await deps.user.findMany({
+      where: sectionFilter,
+    });
+
+    const existingRecords = await deps.attendanceRecord.findMany({
+      where: { sessionId: id },
+    });
+    const recordedStudentIds = new Set(existingRecords.map((r: any) => r.studentId));
+
+    for (const student of sectionStudents) {
+      if (!recordedStudentIds.has(student.id)) {
+        await deps.attendanceRecord.create({
+          data: {
+            sessionId: id,
+            studentId: student.id,
+            status: 'ABSENT',
+            method: 'SYSTEM',
+          },
+        });
+      }
+    }
+
     await deps.attendanceSession.update({
       where: { id },
       data: { status: 'CLOSED', closedAt: new Date() },
     });
-
-    // Mark remaining enrolled students in this section who did not scan as ABSENT
-    if (session.slot?.sectionId) {
-      const sectionStudents = await deps.user.findMany({
-        where: { role: 'STUDENT', sectionId: session.slot.sectionId },
-      });
-
-      const existingRecords = await deps.attendanceRecord.findMany({
-        where: { sessionId: id },
-      });
-      const recordedStudentIds = new Set(existingRecords.map((r: any) => r.studentId));
-
-      for (const st of sectionStudents) {
-        if (!recordedStudentIds.has(st.id)) {
-          await deps.attendanceRecord.create({
-            data: {
-              sessionId: id,
-              studentId: st.id,
-              status: 'ABSENT',
-              method: 'SYSTEM',
-            },
-          });
-        }
-      }
-    }
+    activeQrBeacons.delete(id);
 
     // Emit live event that session attendance was finalized
     emitToRoom(`session:${id}`, 'attendance:finalized', { sessionId: id });
@@ -270,7 +405,7 @@ export const registerAttendanceRoutes = (
    */
   app.get('/api/v1/attendance/me/summary', { preHandler: auth }, async (request, reply) => {
     const user = (request as any).user;
-    const subjects = await deps.subject.findMany();
+    const subjects = await deps.subject?.findMany({}) ?? [];
 
     const records = await deps.attendanceRecord.findMany({
       where: { studentId: user.id },
@@ -347,11 +482,27 @@ export const registerAttendanceRoutes = (
       return reply.send({ active: false, session: null });
     }
 
-    // If user is a student, filter to their section if available
-    let matching = openSessions[0];
-    if (user.role === 'STUDENT' && user.sectionId) {
-      const secMatch = openSessions.find((s: any) => s.slot?.sectionId === user.sectionId);
-      if (secMatch) matching = secMatch;
+    const now = Date.now();
+    const beaconOpenSessions = openSessions.filter((session: any) => {
+      const heartbeat = activeQrBeacons.get(session.id);
+      if (!heartbeat) return false;
+      return now - heartbeat <= 25000;
+    });
+
+    if (beaconOpenSessions.length === 0) {
+      return reply.send({ active: false, session: null });
+    }
+
+    let matching: any = null;
+    if (user.role === 'STUDENT') {
+      matching = beaconOpenSessions.find((session: any) => (
+        session.slot?.sectionId === user.sectionId
+      ));
+      if (!matching) {
+        return reply.send({ active: false, session: null });
+      }
+    } else {
+      matching = beaconOpenSessions[0];
     }
 
     return reply.send({

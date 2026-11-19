@@ -17,6 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/lib/useSocket';
 
 export default function FreeRoomsPage() {
   const { user } = useAuth();
@@ -34,7 +35,14 @@ export default function FreeRoomsPage() {
         date: selectedDate,
         period: selectedPeriod,
         type: roomType || undefined,
+        includeUnavailable: true,
       }),
+  });
+
+  useSocket({
+    'rooms:changed': () => {
+      void refetch();
+    },
   });
 
   const handleBookRoom = async (e: React.FormEvent) => {
@@ -49,6 +57,7 @@ export default function FreeRoomsPage() {
         purpose,
       });
       setBookingSuccess(true);
+      await refetch();
       setTimeout(() => {
         setBookingRoom(null);
         setBookingSuccess(false);
@@ -131,11 +140,11 @@ export default function FreeRoomsPage() {
           <div className="flex items-center gap-2">
             <Building className="w-4 h-4 text-[#86724F]" />
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F]">
-              Available Spaces for Period {selectedPeriod}
+              Available & Booked Spaces for Period {selectedPeriod}
             </h2>
           </div>
           <span className="text-xs font-semibold text-[#7E766B]">
-            {freeRooms?.length || 0} Free Rooms Found
+            {freeRooms?.filter((room) => room.available).length || 0} Available · {freeRooms?.filter((room) => room.available === false).length || 0} Booked
           </span>
         </div>
 
@@ -186,12 +195,31 @@ export default function FreeRoomsPage() {
                 </div>
 
                 <div className="pt-3 border-t border-[#CFC5B8]/40 flex items-center justify-between pl-2">
-                  <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Unoccupied</span>
-                  </span>
+                  {room.available === false ? (
+                    <div className="min-w-0 pr-2">
+                      <span className="text-xs font-semibold text-[#BA1A1A] flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#BA1A1A]" />
+                        <span>BOOKED</span>
+                      </span>
+                      {room.booking?.purpose && (
+                        <p className="mt-1 text-[10px] text-[#7E766B] truncate" title={room.booking.purpose}>
+                          Reason: {room.booking.purpose}
+                        </p>
+                      )}
+                      {room.booking?.bookedByName && (
+                        <p className="mt-1 text-[10px] text-[#7E766B]">
+                          Booked by: {room.booking.bookedByName}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Unoccupied</span>
+                    </span>
+                  )}
 
-                  {(user?.role === 'FACULTY' || user?.role === 'ADMIN') && (
+                  {room.available !== false && (user?.role === 'FACULTY' || user?.role === 'ADMIN') && (
                     <button
                       onClick={() => setBookingRoom(room)}
                       className="py-1.5 px-3.5 rounded-xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95"

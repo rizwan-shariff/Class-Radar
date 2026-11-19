@@ -121,6 +121,8 @@ export const attachRealtime = (
 
     // Every user joins their personal room
     void socket.join(`user:${userId}`);
+    // Every role receives room availability and booking notifications.
+    void socket.join('rooms');
 
     // Students auto-join their section room
     if (role === 'STUDENT' && sectionId) {

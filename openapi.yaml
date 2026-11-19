@@ -36,6 +36,16 @@ components:
         name: { type: string }
         type: { type: string, enum: [CLASSROOM, LAB] }
         capacity: { type: integer }
+        available: { type: boolean }
+        status: { type: string, enum: [AVAILABLE, BOOKED_OR_OCCUPIED] }
+        booking:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            purpose: { type: string }
+            date: { type: string, format: date }
+            period: { type: integer, minimum: 1, maximum: 8 }
 
 paths:
   /api/v1/auth/login:
@@ -203,6 +213,9 @@ paths:
         - in: query
           name: minCapacity
           schema: { type: integer }
+        - in: query
+          name: includeUnavailable
+          schema: { type: boolean, default: false }
       responses:
         '200':
           description: List of available rooms
@@ -211,3 +224,32 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Room' }
+
+  /api/v1/health:
+    get:
+      summary: API health status
+      responses:
+        '200':
+          description: API is healthy
+
+  /api/v1/attendance/sessions/{id}/records:
+    get:
+      summary: Get attendance records and turnout totals
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Attendance turnout and records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentCount: { type: integer, minimum: 0 }
+                  totalStudents: { type: integer, minimum: 0 }
+                  absentCount: { type: integer, minimum: 0 }

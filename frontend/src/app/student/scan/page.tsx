@@ -39,7 +39,8 @@ export default function StudentScanPage() {
     refetchInterval: 5000, // checks every 5s if faculty opened a session
   });
 
-  const isSessionAllowed = sessionAuth?.active === true;
+  const isSessionAllowed =
+    !isCheckingAuth && sessionAuth?.active === true && Boolean(sessionAuth.session);
   const activeSessionInfo = sessionAuth?.session;
 
   useEffect(() => {
@@ -53,6 +54,19 @@ export default function StudentScanPage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (isSessionAllowed) return;
+    if (!scannerRef.current) return;
+    try {
+      if (scannerRef.current.isScanning) {
+        void scannerRef.current.stop();
+      }
+    } catch {
+      // Scanner may already be stopped.
+    }
+    setIsCameraActive(false);
+  }, [isSessionAllowed]);
 
   const submitToken = async (tokenToSubmit: string) => {
     if (!tokenToSubmit.trim()) return;

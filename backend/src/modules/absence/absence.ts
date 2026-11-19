@@ -20,6 +20,18 @@ const getAbsencesQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
 });
 
+const parseStoredPeriods = (value: number[] | string): number[] => {
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((period): period is number => Number.isInteger(period) && period >= 1 && period <= 8)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
 // ── Dependency types ───────────────────────────────────────────────────────
 
 export type AbsenceDependencies = AuthDependencies & {
@@ -47,7 +59,7 @@ export type AbsenceDependencies = AuthDependencies & {
       data: {
         facultyId: string;
         date: Date;
-        periods: number[];
+        periods: number[] | string;
         reason?: string;
         createdById: string;
       };
@@ -56,7 +68,7 @@ export type AbsenceDependencies = AuthDependencies & {
       id: string;
       facultyId: string;
       date: Date;
-      periods: number[];
+      periods: number[] | string;
       reason: string | null;
       createdById: string;
       faculty?: { id: string; name: string; email: string };
@@ -69,7 +81,7 @@ export type AbsenceDependencies = AuthDependencies & {
         id: string;
         facultyId: string;
         date: Date;
-        periods: number[];
+        periods: number[] | string;
         reason: string | null;
         createdById: string;
         faculty?: { id: string; name: string; email: string };
@@ -138,40 +150,39 @@ export const registerAbsenceRoutes = (
       const weekday = jsDay; // 1–6 matches our schema
 
       // Fetch faculty's slots for that weekday
-      const slots = await deps.slot.findMany({
-        where: { facultyId, weekday },
-      });
+      // Absence reporting is valid even on an unscheduled period. Coverage is
+      // reviewed by the admin; this route must not fail merely because no slot exists.
 
-      const slotPeriods = new Set(slots.map((s) => s.period));
-      const invalidPeriods = periods.filter((p) => !slotPeriods.has(p));
-
-      if (invalidPeriods.length > 0) {
-        return reply.code(422).send({
-          error: {
-            code: 'NO_SLOT',
-            message: `Faculty has no slot on this weekday for period(s): ${invalidPeriods.join(', ')}`,
+      // Create the absence record
+      let absence;
+      try {
+        absence = await deps.absence.create({
+          data: {
+            facultyId,
+            date: absenceDate,
+            periods: JSON.stringify(periods),
+            reason,
+            createdById: actor.id,
           },
+          include: { faculty: true },
+        });
+      } catch (error) {
+        app.log.error(error);
+        return reply.code(500).send({
+          error: { code: 'ABSENCE_CREATE_FAILED', message: 'Unable to submit absence' },
         });
       }
 
-      // Create the absence record
-      const absence = await deps.absence.create({
-        data: {
-          facultyId,
-          date: absenceDate,
-          periods,
-          reason,
-          createdById: actor.id,
-        },
-        include: { faculty: true },
-      });
+      const responsePeriods =
+        parseStoredPeriods(absence.periods);
 
       // Emit to admin room
       emitToRoom('admin', 'absence:created', {
         id: absence.id,
         facultyId: absence.facultyId,
+        facultyName: actor.name,
         date: absence.date.toISOString().slice(0, 10),
-        periods: absence.periods,
+        periods: responsePeriods,
         reason: absence.reason,
       });
 
@@ -179,7 +190,7 @@ export const registerAbsenceRoutes = (
         id: absence.id,
         facultyId: absence.facultyId,
         date: absence.date.toISOString().slice(0, 10),
-        periods: absence.periods,
+        periods: responsePeriods,
         reason: absence.reason,
         createdById: absence.createdById,
       });
@@ -207,14 +218,17 @@ export const registerAbsenceRoutes = (
       });
 
       return reply.send(
-        absences.map((a) => ({
-          id: a.id,
-          facultyId: a.facultyId,
-          date: a.date.toISOString().slice(0, 10),
-          periods: a.periods,
-          reason: a.reason,
-          createdById: a.createdById,
-        })),
+        absences.map((a) => {
+          const periods = parseStoredPeriods(a.periods);
+          return {
+            id: a.id,
+            facultyId: a.facultyId,
+            date: a.date.toISOString().slice(0, 10),
+            periods,
+            reason: a.reason,
+            createdById: a.createdById,
+          };
+        }),
       );
     },
   );

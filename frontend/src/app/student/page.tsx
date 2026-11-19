@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, Slot } from '@/lib/api';
 import { useSocket } from '@/lib/useSocket';
@@ -32,6 +32,16 @@ export default function StudentDashboardPage() {
   const queryClient = useQueryClient();
   const [liveToast, setLiveToast] = useState<string | null>(null);
 
+  useEffect(() => {
+    const today = new Date();
+    const localDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
+    setSelectedDate(localDate);
+  }, []);
+
   // Listen to realtime changes for student section
   useSocket({
     'timetable:changed': (payload: any) => {
@@ -60,6 +70,12 @@ export default function StudentDashboardPage() {
     queryFn: () => api.submissions.listStudent(),
   });
 
+  const { data: activeSession } = useQuery({
+    queryKey: ['student-active-attendance'],
+    queryFn: () => api.attendance.checkActiveSession(),
+    refetchInterval: 5000,
+  });
+
   // Listen to realtime changes for student section
   useSocket({
     'deadline:finalized': (payload: any) => {
@@ -70,6 +86,7 @@ export default function StudentDashboardPage() {
     'deadline:updated': () => {
       refetchDeadlines();
     },
+  });
   });
 
   // Calculate high-level attendance metric
@@ -268,7 +285,13 @@ export default function StudentDashboardPage() {
 
                     {/* Right Action Button */}
                     <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-2 sm:pt-0">
-                      <JitterActionSlotButton href="/student/scan" isCancelled={isCanc} />
+                      {activeSession?.active && activeSession.session?.slotId === slot.id && !isCanc ? (
+                        <JitterActionSlotButton href="/student/scan" isCancelled={isCanc} />
+                      ) : (
+                        <span className="px-3.5 py-1.5 rounded-full bg-[#F0EEE9] dark:bg-white/10 text-[#7E766B] dark:text-white/60 text-[11px] font-bold border border-[#CFC5B8]/40 dark:border-white/10">
+                          QR Not Live
+                        </span>
+                      )}
                     </div>
                   </div>
 

@@ -23,7 +23,8 @@ export type RoomAvailabilityDependencies = {
   roomBooking: {
     findUnique(args: {
       where: { roomId_date_period: { roomId: string; date: Date; period: number } };
-    }): Promise<{ id: string } | null>;
+      include?: { bookedBy: { select: { id: true; name: true } } };
+    }): Promise<{ id: string; purpose?: string; date?: Date; period?: number; bookedBy?: { id: string; name: string } } | null>;
   };
 };
 
@@ -46,6 +47,7 @@ const freeRoomQuerySchema = z.object({
   period: z.coerce.number().int().min(1).max(8),
   type: z.enum(['CLASSROOM', 'LAB']).optional(),
   minCapacity: z.coerce.number().int().min(0).optional(),
+  includeUnavailable: z.enum(['true', 'false']).optional(),
 });
 
 const toUtcDate = (date: Date | string): Date =>
@@ -108,10 +110,39 @@ export const registerRoomRoutes = (
         ...(parsed.data.minCapacity !== undefined ? { capacity: { gte: parsed.data.minCapacity } } : {}),
       },
     });
-    const freeRooms = [];
+    const roomsWithStatus = [];
     for (const room of rooms) {
-      if (await isRoomFree(room.id, date, parsed.data.period, dependencies)) freeRooms.push(room);
+      const available = await isRoomFree(room.id, date, parsed.data.period, dependencies);
+      if (!parsed.data.includeUnavailable && !available) continue;
+
+      const booking = available
+        ? null
+        : await dependencies.roomBooking.findUnique({
+            where: {
+              roomId_date_period: {
+                roomId: room.id,
+                date,
+                period: parsed.data.period,
+              },
+            },
+            include: { bookedBy: { select: { id: true, name: true } } },
+          });
+
+      roomsWithStatus.push({
+        ...room,
+        available,
+        status: available ? 'AVAILABLE' : 'BOOKED_OR_OCCUPIED',
+        booking: booking
+          ? {
+              id: (booking as any).id,
+              purpose: (booking as any).purpose,
+              bookedByName: (booking as any).bookedBy?.name || null,
+              date: date.toISOString().slice(0, 10),
+              period: parsed.data.period,
+            }
+          : null,
+      });
     }
-    return reply.send(freeRooms);
+    return reply.send(roomsWithStatus);
   });
 };
