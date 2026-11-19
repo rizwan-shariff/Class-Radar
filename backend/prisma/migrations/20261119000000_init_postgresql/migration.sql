@@ -70,7 +70,7 @@ CREATE TABLE "RoomBooking" (
     "id" TEXT NOT NULL,
     "roomId" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
-    "period" INTEGER NOT NOT NULL,
+    "period" INTEGER NOT NULL,
     "bookedById" TEXT NOT NULL,
     "purpose" TEXT NOT NULL,
     CONSTRAINT "RoomBooking_pkey" PRIMARY KEY ("id")
@@ -78,7 +78,7 @@ CREATE TABLE "RoomBooking" (
 
 CREATE TABLE "AttendanceSession" (
     "id" TEXT NOT NULL,
-    "slotId" TEXT NOT NOT NULL,
+    "slotId" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "startedById" TEXT NOT NULL,
     "status" TEXT NOT NULL,
