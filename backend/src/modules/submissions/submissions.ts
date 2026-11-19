@@ -16,9 +16,11 @@ export interface SubmissionsDependencies {
   };
   section: {
     findUnique(args: any): Promise<any>;
+    findMany?(args?: any): Promise<any[]>;
   };
   subject: {
     findUnique(args: any): Promise<any>;
+    findMany?(args?: any): Promise<any[]>;
   };
 }
 
