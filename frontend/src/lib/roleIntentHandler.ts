@@ -465,6 +465,68 @@ export class RoleIntentHandler {
       };
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // NVIDIA NIM POWERED CONVERSATIONAL AI REASONING (FALLBACK)
+    // ─────────────────────────────────────────────────────────────
+    try {
+      // Gather relevant live context for the AI
+      let liveContext = '';
+      if (role === 'STUDENT') {
+        const [todaySlots, attendance] = await Promise.all([
+          api.timetable.me('2026-11-09').catch(() => []),
+          api.attendance.summary().catch(() => []),
+        ]);
+        liveContext = `
+Student Registered Subjects & Attendance:
+${attendance.map((a) => `- ${a.subjectCode} (${a.subjectName}): ${a.attended}/${a.total} (${a.percent}%). Can skip: ${a.canSkip}, Must attend: ${a.mustAttend}`).join('\n')}
+
+Student Today's Schedule:
+${todaySlots.map((s) => `- Period ${s.period}: ${s.subjectCode} in ${s.roomName || 'Room 406'}`).join('\n')}
+`;
+      } else if (role === 'FACULTY') {
+        const todaySlots = await api.timetable.me('2026-11-09').catch(() => []);
+        liveContext = `
+Faculty Teaching Schedule:
+${todaySlots.map((s) => `- Period ${s.period}: ${s.subjectCode} for section ${s.sectionId || 'CSE-3F'} in ${s.roomName || 'Room 406'}`).join('\n')}
+`;
+      } else if (role === 'ADMIN') {
+        const [util, lowAtt] = await Promise.all([
+          api.analytics.roomUtilization().catch(() => []),
+          api.analytics.lowAttendance().catch(() => []),
+        ]);
+        liveContext = `
+Admin Live Institutional Metrics:
+- Rooms monitored: ${util.length}
+- Students with low attendance (<75%): ${lowAtt.length}
+`;
+      }
+
+      const aiResponse = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: raw,
+          user,
+          context: liveContext,
+        }),
+      });
+
+      if (aiResponse.ok) {
+        const aiData = await aiResponse.json();
+        if (aiData.route) {
+          navigate(aiData.route);
+        }
+        return {
+          spokenText: aiData.spokenText || aiData.displayText,
+          displayText: aiData.displayText,
+          route: aiData.route || undefined,
+          actionLabel: aiData.actionLabel || undefined,
+        };
+      }
+    } catch (e) {
+      console.warn('NVIDIA AI fallback query failed:', e);
+    }
+
     // Default polite response
     return {
       spokenText: `I heard: ${raw}. You can ask about your schedule, attendance, or free rooms.`,
