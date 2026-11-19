@@ -1,6 +1,15 @@
 {
   "name": "classradar",
   "private": true,
+  "scripts": {
+    "backend:lint": "pnpm --dir backend lint",
+    "backend:test": "pnpm --dir backend test",
+    "backend:build": "pnpm --dir backend build",
+    "frontend:build": "pnpm --dir frontend build",
+    "lint": "pnpm backend:lint && pnpm frontend:lint",
+    "test": "pnpm backend:test",
+    "frontend:lint": "pnpm --dir frontend lint"
+  },
   "pnpm": {
     "overrides": {
       "magic-string": "0.30.17"

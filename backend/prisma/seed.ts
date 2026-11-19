@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const DEFAULT_PASSWORD = 'admin123';
+const DEFAULT_PASSWORD = 'classradar123';
 
 function parseCsv(filePath: string): Record<string, string>[] {
   const content = fs.readFileSync(filePath, 'utf-8');
@@ -42,6 +42,9 @@ const main = async (): Promise<void> => {
   const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
   console.log('🧹 Purging all existing records in database...');
+  await prisma.postLike.deleteMany();
+  await prisma.postComment.deleteMany();
+  await prisma.campusPost.deleteMany();
   await prisma.attendanceRecord.deleteMany();
   await prisma.attendanceSession.deleteMany();
   await prisma.substitution.deleteMany();
@@ -142,11 +145,9 @@ const main = async (): Promise<void> => {
 
   console.log('🎓 Seeding all real CSE-3F students from CSV with USN...');
   const possiblePaths = [
-    path.resolve(__dirname, '../../database'),
-    path.resolve(__dirname, '../database'),
-    path.resolve(__dirname, '../../../database'),
     path.resolve(process.cwd(), 'database'),
     path.resolve(process.cwd(), '../database'),
+    path.resolve(process.cwd(), 'backend', '../database'),
     '/app/database',
   ];
   let databaseDir = possiblePaths.find((p) => fs.existsSync(path.join(p, 'CSE-3F-students.csv'))) || '/app/database';
@@ -253,7 +254,7 @@ const main = async (): Promise<void> => {
     }
 
     console.log(`Creating ${sessionGroups.size} attendance sessions from CSV...`);
-    for (const [key, group] of sessionGroups.entries()) {
+    for (const group of sessionGroups.values()) {
       const slotId = slotLookup.get(`${group.weekday}_${group.period}`);
       if (!slotId) continue;
 
@@ -293,7 +294,7 @@ const main = async (): Promise<void> => {
     }
   }
 
-  console.log('✅ SQLite database successfully populated with real CSE-3F data!');
+  console.log('✅ PostgreSQL database successfully populated with real CSE-3F data!');
   console.log(`All accounts created with password: "${DEFAULT_PASSWORD}"`);
 };
 
