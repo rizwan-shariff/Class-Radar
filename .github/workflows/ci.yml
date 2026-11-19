@@ -1,0 +1,118 @@
+name: ClassRadar CI
+
+on:
+  push:
+    branches: [ "main", "frontend", "backend", "CI_CD" ]
+  pull_request:
+    branches: [ "main", "frontend", "backend", "CI_CD" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-ci:
+    name: Backend Lint, TypeCheck & Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: classradar_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        working-directory: ./backend
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://postgres:password@localhost:5432/classradar_test?schema=public"
+
+      - name: Backend Lint
+        working-directory: ./backend
+        run: pnpm lint
+
+      - name: Backend TypeScript Check
+        working-directory: ./backend
+        run: npx tsc --noEmit
+
+      - name: Run Backend Vitest Tests
+        working-directory: ./backend
+        run: pnpm test
+        env:
+          DATABASE_URL: "postgresql://postgres:password@localhost:5432/classradar_test?schema=public"
+          JWT_SECRET: "ci_jwt_secret_key_12345"
+          REDIS_URL: "redis://localhost:6379"
+
+  frontend-ci:
+    name: Frontend Lint, TypeCheck & Production Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Frontend Lint
+        working-directory: ./frontend
+        run: pnpm lint
+
+      - name: Frontend TypeScript Check
+        working-directory: ./frontend
+        run: npx tsc --noEmit
+
+      - name: Frontend Next.js Production Build
+        working-directory: ./frontend
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:3000/api"
+          NEXT_PUBLIC_SOCKET_URL: "http://localhost:3000"
