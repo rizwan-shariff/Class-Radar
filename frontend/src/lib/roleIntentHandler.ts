@@ -1,4 +1,4 @@
-import { User, api } from './api';
+import { User, api, SubmissionDeadline } from './api';
 
 export interface ChatMessage {
   id: string;
@@ -102,13 +102,33 @@ export class RoleIntentHandler {
       let liveContext = '';
 
       if (role === 'STUDENT') {
-        const [todaySlots, attendance, allRooms] = await Promise.all([
+        const [todaySlots, attendance, allRooms, deadlines] = await Promise.all([
           api.timetable.me('2026-11-09').catch(() => []),
           api.attendance.summary().catch(() => []),
           api.rooms.all().catch(() => []),
+          api.submissions.listStudent().catch(() => []),
         ]);
 
         liveContext = `
+STUDENT LIVE SUBMISSION DEADLINES & ASSIGNMENTS:
+${
+  deadlines && deadlines.length > 0
+    ? deadlines
+        .map(
+          (d) =>
+            `- [${d.subject?.code || 'Course'} - ${d.subject?.name || 'Subject'}] "${d.title}": Due on ${new Date(
+              d.dueDate
+            ).toLocaleString('en-US', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })} | Status: ${d.urgency || 'NORMAL'} | Countdown: ${d.countdown || 'Upcoming'} | Finalized: ${
+              d.isFinalized ? 'Yes (Official)' : 'No'
+            } | Instructions: ${d.description || 'None'}`
+        )
+        .join('\n')
+    : 'No upcoming submission deadlines currently posted for your section.'
+}
+
 STUDENT LIVE ATTENDANCE SUMMARY (75% minimum institutional rule):
 ${
   attendance.length > 0
@@ -136,12 +156,29 @@ CAMPUS ROOMS:
 ${allRooms.length} rooms tracked (${allRooms.filter((r) => r.type === 'LAB').length} computer labs, ${allRooms.filter((r) => r.type === 'CLASSROOM').length} classrooms).
 `;
       } else if (role === 'FACULTY') {
-        const [todaySlots, allRooms] = await Promise.all([
+        const [todaySlots, allRooms, facultyDeadlines] = await Promise.all([
           api.timetable.me('2026-11-09').catch(() => []),
           api.rooms.all().catch(() => []),
+          api.submissions.listFaculty().catch(() => [] as SubmissionDeadline[]),
         ]);
 
+        const allDeadlinesList = Array.isArray(facultyDeadlines) ? facultyDeadlines : [];
+
         liveContext = `
+FACULTY MANAGED SUBMISSION DEADLINES:
+${
+  allDeadlinesList.length > 0
+    ? allDeadlinesList
+        .map(
+          (d) =>
+            `- [Section ${d.section?.name || ''}] ${d.subject?.code}: "${d.title}" due ${new Date(
+              d.dueDate
+            ).toLocaleDateString()} (${d.isFinalized ? 'Finalized/Official' : 'Draft/Editable'})`
+        )
+        .join('\n')
+    : 'No deadlines created yet.'
+}
+
 FACULTY TEACHING SCHEDULE:
 ${
   todaySlots.length > 0
@@ -200,6 +237,29 @@ INSTITUTIONAL METRICS:
     // ─────────────────────────────────────────────────────────────
     // 4. OFFLINE / FALLBACK INTENT HANDLER
     // ─────────────────────────────────────────────────────────────
+    if (
+      q.includes('deadline') ||
+      q.includes('submission') ||
+      q.includes('assignment') ||
+      q.includes('project') ||
+      q.includes('homework')
+    ) {
+      const target = role === 'FACULTY' ? '/faculty/deadlines' : '/student/deadlines';
+      navigate(target);
+      return {
+        spokenText:
+          role === 'FACULTY'
+            ? 'Navigating to Faculty Submission Deadlines.'
+            : 'Navigating to your Submission Deadlines.',
+        displayText:
+          role === 'FACULTY'
+            ? 'Navigated to **Faculty Submission Deadlines**. Manage and finalize assignment due dates.'
+            : 'Navigated to **Submission Deadlines**. View and check your upcoming assignments.',
+        route: target,
+        actionLabel: role === 'FACULTY' ? 'Manage Deadlines' : 'View Deadlines',
+      };
+    }
+
     if (q.includes('free room') || q.includes('empty room') || q.includes('room')) {
       navigate('/rooms');
       return {

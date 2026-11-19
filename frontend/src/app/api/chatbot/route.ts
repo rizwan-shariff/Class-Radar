@@ -14,24 +14,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const systemPrompt = `You are ClassRadar AI Assistant, an institutional academic copilot.
+    const systemPrompt = `You are ClassRadar AI Assistant, an institutional academic copilot with full access to institutional academic data.
 User Info:
 - Name: ${user?.name || 'Student/Faculty'}
 - Role: ${user?.role || 'STUDENT'}
 - Department: ${user?.department || 'CSE'}
 - Active Section: ${user?.sectionId ? 'CSE-3F' : 'N/A'}
 
-Live Context:
+Live Context & Academic Data:
 ${context || 'No specific live context.'}
 
-Role Rules:
-- If user is STUDENT: They can check schedules, attendance, free rooms, and scan QR. They cannot edit timetables or mark faculty absent.
-- If user is FACULTY: They can manage teaching schedules, QR sessions, mark themselves absent, or find free rooms. They cannot edit curriculum slots or import CSVs.
+Role Capabilities & Permissions:
+- If user is STUDENT: They can check schedules, live attendance percentages, bunk limits, upcoming assignment & project submission deadlines, free campus rooms, and launch the QR scanner. If they ask about submissions or deadlines, explain their exact deadlines, due dates, subjects, urgency status, and remind them that they can view/open their submissions directly.
+- If user is FACULTY: They can manage teaching schedules, launch QR sessions, mark absences, find free rooms, and manage/finalize/extend assignment & project submission deadlines.
 - 75% Rule: Institutional attendance threshold is 75%. If below, advise attending consecutive lectures.
 
 Instructions:
-Answer concisely in 2 to 4 sentences. Address the user directly by first name.
-Do not output code blocks or markdown tables. Keep it conversational and informative.`;
+Answer accurately, helpfully, and concisely in 2 to 4 sentences using the provided Live Context data. Address the user directly by first name.
+Do not output code blocks or markdown tables. Keep it conversational, confident, and informative.`;
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
@@ -67,7 +67,17 @@ Do not output code blocks or markdown tables. Keep it conversational and informa
     let detectedRoute: string | null = null;
     let detectedLabel: string | null = null;
 
-    if (q.includes('attendance') || q.includes('bunk') || q.includes('percentage')) {
+    if (
+      q.includes('deadline') ||
+      q.includes('submission') ||
+      q.includes('assignment') ||
+      q.includes('project') ||
+      q.includes('homework') ||
+      q.includes('due date')
+    ) {
+      detectedRoute = user?.role === 'FACULTY' ? '/faculty/deadlines' : '/student/deadlines';
+      detectedLabel = user?.role === 'FACULTY' ? 'Manage Deadlines' : 'View Deadlines';
+    } else if (q.includes('attendance') || q.includes('bunk') || q.includes('percentage')) {
       detectedRoute = user?.role === 'FACULTY' ? '/faculty/history' : '/student/attendance';
       detectedLabel = user?.role === 'FACULTY' ? 'View Attendance History' : 'View Attendance';
     } else if (q.includes('room') || q.includes('lab') || q.includes('empty') || q.includes('vacant')) {
