@@ -31,6 +31,10 @@ export interface AttendanceDependencies {
 }
 
 const getJwtSecret = (): string => process.env.JWT_SECRET || 'dev_jwt_secret_classradar_2026';
+const activeQrBeacons = new Map<string, number>();
+export const clearActiveQrBeacons = (): void => {
+  activeQrBeacons.clear();
+};
 
 export const registerAttendanceRoutes = (
   app: FastifyInstance,
@@ -172,6 +176,7 @@ export const registerAttendanceRoutes = (
       getJwtSecret(),
       { expiresIn: '20s' },
     );
+    activeQrBeacons.set(session.id, Date.now());
 
     return reply.send({ token, expiresAt: expiresAt.toISOString() });
   });
@@ -199,12 +204,15 @@ export const registerAttendanceRoutes = (
       ? await deps.user.findMany({ where: { role: 'STUDENT', sectionId: session.slot.sectionId } })
       : [];
     const presentCount = records.filter((r: any) => r.status === 'PRESENT').length;
+    const absentCount = records.filter((r: any) => r.status === 'ABSENT').length;
     const totalStudents = sectionStudents.length;
 
     return reply.send({
       presentCount,
       totalStudents,
-      absentCount: Math.max(0, totalStudents - presentCount),
+      absentCount: session?.status === 'CLOSED'
+        ? absentCount
+        : Math.max(0, totalStudents - presentCount),
       records: records.map((r: any) => ({
         studentId: r.studentId,
         studentName: r.student?.name || 'Verified Student',
@@ -233,13 +241,8 @@ export const registerAttendanceRoutes = (
       return reply.status(404).send({ error: 'Session not found' });
     }
 
-    // Update session status to CLOSED
-    await deps.attendanceSession.update({
-      where: { id },
-      data: { status: 'CLOSED', closedAt: new Date() },
-    });
-
     // Mark remaining enrolled students in this section who did not scan as ABSENT
+    // before closing the session so history is complete immediately.
     if (session.slot?.sectionId) {
       const sectionStudents = await deps.user.findMany({
         where: { role: 'STUDENT', sectionId: session.slot.sectionId },
@@ -262,6 +265,12 @@ export const registerAttendanceRoutes = (
           });
         }
       }
+
+      await deps.attendanceSession.update({
+        where: { id },
+        data: { status: 'CLOSED', closedAt: new Date() },
+      });
+      activeQrBeacons.delete(id);
     }
 
     // Emit live event that session attendance was finalized
@@ -423,16 +432,27 @@ export const registerAttendanceRoutes = (
       return reply.send({ active: false, session: null });
     }
 
+    const now = Date.now();
+    const beaconOpenSessions = openSessions.filter((session: any) => {
+      const heartbeat = activeQrBeacons.get(session.id);
+      if (!heartbeat) return false;
+      return now - heartbeat <= 25000;
+    });
+
+    if (beaconOpenSessions.length === 0) {
+      return reply.send({ active: false, session: null });
+    }
+
     let matching: any = null;
     if (user.role === 'STUDENT') {
-      matching = openSessions.find((session: any) => (
+      matching = beaconOpenSessions.find((session: any) => (
         session.slot?.sectionId === user.sectionId
       ));
       if (!matching) {
         return reply.send({ active: false, session: null });
       }
     } else {
-      matching = openSessions[0];
+      matching = beaconOpenSessions[0];
     }
 
     return reply.send({

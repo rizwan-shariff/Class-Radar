@@ -6,7 +6,7 @@ vi.mock('../realtime/realtime.js', () => ({
   emitToRoom: vi.fn(),
 }));
 
-import { registerAttendanceRoutes, type AttendanceDependencies } from './attendance.js';
+import { clearActiveQrBeacons, registerAttendanceRoutes, type AttendanceDependencies } from './attendance.js';
 
 process.env.JWT_SECRET = 'attendance-test-secret';
 const secret = 'attendance-test-secret';
@@ -33,7 +33,10 @@ const createDeps = (): AttendanceDependencies => ({
     findUnique: async ({ where }) => where.id === 'closed-session'
       ? { id: 'closed-session', slotId: 'slot-1', status: 'CLOSED', slot: { sectionId: 'sec-1' } }
       : { id: 'session-1', slotId: 'slot-1', status: 'OPEN', slot: { sectionId: 'sec-1' } },
-    findMany: async () => [],
+    findMany: async ({ where }: { where?: { status?: string } } = {}) =>
+      where?.status === 'OPEN'
+        ? [{ id: 'session-1', slotId: 'slot-1', status: 'OPEN', startedAt: new Date(), slot: { sectionId: 'sec-1', subject: { code: 'CSE301', name: 'Course' }, faculty: { name: 'Faculty' }, room: { name: 'Room 406' } } }]
+        : [],
     update: async ({ where }) => ({ id: where.id, status: 'CLOSED' }),
   },
   attendanceRecord: {
@@ -53,8 +56,20 @@ describe('attendance bug fixes', () => {
   let app: ReturnType<typeof Fastify>;
 
   beforeEach(() => {
+    clearActiveQrBeacons();
     app = Fastify();
     registerAttendanceRoutes(app, createDeps());
+  });
+
+  it('does not allow scanning until the faculty has fetched a QR beacon', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/attendance/active-session',
+      headers: { authorization: `Bearer ${makeToken('STUDENT', 'sec-1')}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ active: false, session: null });
   });
 
   it('returns 5-second QR refresh metadata with a server acceptance window', async () => {
@@ -99,5 +114,32 @@ describe('attendance bug fixes', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.json().error).toContain('already closed');
+  });
+
+  it('creates and counts a closed-session absent student', async () => {
+    const deps = createDeps();
+    deps.attendanceRecord.findMany = async ({ where }: { where?: { sessionId?: string } } = {}) =>
+      where?.sessionId
+        ? [
+            { studentId: 'stu-1', status: 'PRESENT', method: 'SCAN', markedAt: new Date(), student: { name: 'Student One', email: 'student1@test.com' } },
+            { studentId: 'stu-2', status: 'ABSENT', method: 'SYSTEM', markedAt: new Date(), student: { name: 'Student Two', email: 'student2@test.com' } },
+            { studentId: 'stu-3', status: 'ABSENT', method: 'SYSTEM', markedAt: new Date(), student: { name: 'Student Three', email: 'student3@test.com' } },
+          ]
+        : [];
+
+    const appWithRecords = Fastify();
+    registerAttendanceRoutes(appWithRecords, deps);
+    const res = await appWithRecords.inject({
+      method: 'GET',
+      url: '/api/v1/attendance/sessions/closed-session/records',
+      headers: { authorization: `Bearer ${makeToken('FACULTY', null)}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      presentCount: 1,
+      absentCount: 2,
+      totalStudents: 3,
+    });
   });
 });
