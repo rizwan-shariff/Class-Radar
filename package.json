@@ -2,6 +2,9 @@
   "name": "classradar",
   "private": true,
   "pnpm": {
+    "overrides": {
+      "magic-string": "0.30.17"
+    },
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",
@@ -11,4 +14,3 @@
     ]
   }
 }
-
