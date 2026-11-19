@@ -71,18 +71,31 @@ Critical Instructions:
 
     // If content is empty or contains reasoning prefix artifacts, clean it thoroughly
     if (!content && data.choices?.[0]?.message?.reasoning_content) {
-      // Strip any "Here's a thinking process:" chain-of-thought blocks
-      const rawReasoning = data.choices[0].message.reasoning_content;
-      const stripped = rawReasoning
-        .replace(/Here's a thinking process:[\s\S]*?(Draft:|Response:|Output:|$)/i, '')
-        .replace(/^[\s\S]*?(Draft:|Response:|Output:)/i, '')
-        .trim();
-      content = stripped;
+      content = data.choices[0].message.reasoning_content;
     }
 
-    // Double safety check: strip any remaining thinking process text
-    if (content.includes("Here's a thinking process:")) {
-      content = content.replace(/Here's a thinking process:[\s\S]*?\n\n/i, '').trim();
+    // Comprehensive scrubber to remove chain-of-thought / scratchpad leakage:
+    // 1. Remove <thought>...</thought> or <thinking>...</thinking> XML tags
+    content = content.replace(/<(thought|thinking)>[\s\S]*?<\/\1>/gi, '').trim();
+
+    // 2. Remove standard Nemotron / DeepSeek / reasoning preamble patterns
+    // e.g. "Here's a thinking process: ... Final Answer:" or bulleted drafting steps
+    if (/Here's a thinking process:/i.test(content)) {
+      // If there's an explicit response marker like "Final Answer:", "Response:", "Output:", or a concluding quoted text
+      const markerMatch = content.match(/(?:Final Answer|Response|Output|Draft):\s*([\s\S]+)$/i);
+      if (markerMatch && markerMatch[1]) {
+        content = markerMatch[1].trim();
+      } else {
+        // Strip everything from "Here's a thinking process:" up to the last double newline or bullet list
+        content = content.replace(/Here's a thinking process:[\s\S]*?\n\n/i, '').trim();
+      }
+    }
+
+    // 3. Remove leading thought artifacts like "- Check sentence count:", "- Let me draft:", etc.
+    content = content.replace(/^(\s*[-*]\s*[\s\S]*?\n)+(?=[A-Z0-9])/m, '').trim();
+    // Also remove any leading quotes if the model quoted its final output
+    if (content.startsWith('"') && content.endsWith('"') && content.length > 2) {
+      content = content.slice(1, -1).trim();
     }
 
     // Route detection based on keywords in user prompt
