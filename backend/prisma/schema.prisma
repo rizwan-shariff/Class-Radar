@@ -27,7 +27,6 @@ model User {
   posts            CampusPost[]
   postComments     PostComment[]
   postLikes        PostLike[]
-  deadlinesCreated SubmissionDeadline[]
 }
 
 model Section {
@@ -38,7 +37,6 @@ model Section {
   
   users      User[]
   slots      Slot[]
-  deadlines  SubmissionDeadline[]
 }
 
 model Subject {
@@ -47,7 +45,6 @@ model Subject {
   name  String
   
   slots Slot[]
-  deadlines SubmissionDeadline[]
 }
 
 model Room {
@@ -185,23 +182,5 @@ model PostLike {
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
-}
-
-model SubmissionDeadline {
-  id          String    @id @default(uuid())
-  subjectId   String
-  sectionId   String
-  facultyId   String
-  title       String
-  description String?
-  dueDate     DateTime
-  isFinalized Boolean   @default(false)
-  finalizedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  subject     Subject   @relation(fields: [subjectId], references: [id])
-  section     Section   @relation(fields: [sectionId], references: [id])
-  faculty     User      @relation(fields: [facultyId], references: [id])
 }
 

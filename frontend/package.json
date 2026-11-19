@@ -10,8 +10,6 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.107.1",
-    "@types/animejs": "^4.0.0",
-    "animejs": "^4.5.0",
     "clsx": "^2.1.1",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^1.70.0",

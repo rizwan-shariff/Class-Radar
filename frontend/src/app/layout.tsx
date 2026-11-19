@@ -3,7 +3,6 @@ import './globals.css';
 import { Providers } from '@/context/Providers';
 import { BottomNav } from '@/components/BottomNav';
 import { TopHeader } from '@/components/TopHeader';
-import { ChatbotWidget } from '@/components/ChatbotWidget';
 
 export const metadata: Metadata = {
   title: 'ClassRadar — Academic Schedule & Attendance Intelligence',
@@ -37,7 +36,6 @@ export default function RootLayout({
         <Providers>
           <TopHeader />
           <main className="flex-1 pb-28 pt-2">{children}</main>
-          <ChatbotWidget />
           <BottomNav />
         </Providers>
       </body>

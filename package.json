@@ -11,9 +11,6 @@
     "frontend:lint": "pnpm --dir frontend lint"
   },
   "pnpm": {
-    "overrides": {
-      "magic-string": "0.30.17"
-    },
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",
@@ -23,3 +20,4 @@
     ]
   }
 }
+

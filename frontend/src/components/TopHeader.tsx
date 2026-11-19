@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
-import { JitterHeaderButton } from './ui/JitterHeaderButton';
 import { useSocket } from '@/lib/useSocket';
 import {
   LogOut,
@@ -23,9 +22,7 @@ import {
   Shield,
   Sparkles,
   History,
-  Users,
-  FileCheck2,
-  Clock
+  Users
 } from 'lucide-react';
 
 export function TopHeader() {
@@ -97,7 +94,6 @@ export function TopHeader() {
       { label: "Today's Schedule", href: '/student', icon: <Calendar className="w-4 h-4" /> },
       { label: 'Weekly Timetable', href: '/student/timetable', icon: <BookOpen className="w-4 h-4" /> },
       { label: 'Attendance & Compliance', href: '/student/attendance', icon: <UserCheck className="w-4 h-4" /> },
-      { label: 'Deadlines', href: '/student/deadlines', icon: <FileCheck2 className="w-4 h-4" /> },
       { label: 'Community Feed', href: '/student/threads', icon: <Users className="w-4 h-4" /> },
       { label: 'Free Rooms', href: '/rooms', icon: <Search className="w-4 h-4" /> },
     ];
@@ -105,7 +101,6 @@ export function TopHeader() {
     desktopNav = [
       { label: "Teaching Schedule", href: '/faculty', icon: <Calendar className="w-4 h-4" /> },
       { label: 'QR Attendance Session', href: '/faculty/session', icon: <QrCode className="w-4 h-4" /> },
-      { label: 'Deadlines & Projects', href: '/faculty/deadlines', icon: <FileCheck2 className="w-4 h-4" /> },
       { label: 'Attendance History', href: '/faculty/history', icon: <History className="w-4 h-4" /> },
       { label: 'Free Room Finder', href: '/rooms', icon: <Search className="w-4 h-4" /> },
     ];
@@ -120,7 +115,7 @@ export function TopHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#CFC5B8]/60 dark:border-white/10 backdrop-blur-2xl bg-[#FCF9F4]/95 dark:bg-[#1C1D21]/95 shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all">
+    <header className="sticky top-0 z-40 w-full glass-panel-subtle border-b border-[#CFC5B8]/40 backdrop-blur-2xl bg-[#FCF9F4]/80 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand & Badge */}
         <div className="flex items-center gap-3">
@@ -130,19 +125,19 @@ export function TopHeader() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-[#1B1C19] dark:text-white tracking-tight group-hover:text-[#6C5939] transition-colors">ClassRadar</span>
-                <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E7DFD1] dark:bg-white/10 text-[#6C5939] dark:text-[#E8EAED]">
+                <span className="text-base font-bold text-[#1B1C19] tracking-tight group-hover:text-[#6C5939] transition-colors">ClassRadar</span>
+                <span className="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E7DFD1] text-[#6C5939]">
                   v2.4
                 </span>
               </div>
-              <p className="text-[11px] font-semibold text-[#4C463C] dark:text-[#A3AAB5] flex items-center gap-1">
+              <p className="text-[11px] font-medium text-[#7E766B] flex items-center gap-1">
                 <span>{user.name}</span>
                 <span className="opacity-40">•</span>
-                <span className="uppercase text-[10px] text-[#6C5939] dark:text-[#E8EAED] font-bold">{user.role}</span>
+                <span className="uppercase text-[10px] text-[#86724F] font-semibold">{user.role}</span>
                 {user.department && (
                   <>
                     <span className="opacity-40">•</span>
-                    <span className="hidden sm:inline text-[#7E766B] dark:text-white/60 font-medium">{user.department}</span>
+                    <span className="hidden sm:inline text-[#7E766B]">{user.department}</span>
                   </>
                 )}
               </p>
@@ -150,24 +145,22 @@ export function TopHeader() {
           </Link>
         </div>
 
-        {/* Laptop/Desktop Navigation Bar with Jitter Micro-Interactions */}
-        <nav className="hidden md:flex items-center gap-1.5 bg-[#F0EEE9] dark:bg-white/10 p-1.5 rounded-full border border-[#CFC5B8]/60 dark:border-white/10 shadow-sm">
+        {/* Laptop/Desktop Navigation Bar */}
+        <nav className="hidden md:flex items-center gap-1 bg-[#F0EEE9]/70 p-1.5 rounded-full border border-[#CFC5B8]/40 shadow-inner">
           {desktopNav.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group relative flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
                   isActive
-                    ? 'bg-white dark:bg-[#6C5939] text-[#1B1C19] dark:text-white shadow-sm font-extrabold scale-[1.04]'
-                    : 'text-[#3E3A33] dark:text-white/80 hover:text-[#1B1C19] dark:hover:text-white hover:bg-white/80 dark:hover:bg-white/10 hover:scale-[1.02] active:scale-95'
+                    ? 'bg-white text-[#6C5939] shadow-sm font-bold scale-[1.02]'
+                    : 'text-[#4C463C] hover:text-[#1B1C19] hover:bg-white/40'
                 }`}
               >
-                {/* Jitter Shimmer light sweep on hover */}
-                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 dark:via-white/15 to-transparent transition-transform duration-500 ease-out group-hover:translate-x-full" />
-                <span className="relative z-10 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
-                <span className="relative z-10 tracking-tight">{item.label}</span>
+                {item.icon}
+                <span>{item.label}</span>
               </Link>
             );
           })}
@@ -176,7 +169,7 @@ export function TopHeader() {
         {/* Right Action Hub */}
         <div className="flex items-center gap-2">
           {/* Curricular Status Pill for Laptop */}
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F0EEE9] dark:bg-white/10 border border-[#CFC5B8]/40 dark:border-white/10 text-xs font-semibold text-[#1B1C19] dark:text-white shadow-xs">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F0EEE9] border border-white/80 text-xs font-medium text-[#4C463C]">
             <span className="w-2 h-2 rounded-full bg-[#6C5939] animate-pulse" />
             <span>Curricular Week 8</span>
           </div>
@@ -187,7 +180,7 @@ export function TopHeader() {
           <div className="relative">
             <button
               onClick={() => setNotificationsOpen((open) => !open)}
-              className="relative p-2 rounded-xl text-[#1B1C19] dark:text-white hover:bg-[#F0EEE9] dark:hover:bg-white/10 transition"
+              className="relative p-2 rounded-xl text-[#4C463C] hover:bg-[#F0EEE9] transition"
               aria-label="Notifications"
             >
               <Bell className="w-4 h-4" />
@@ -197,26 +190,26 @@ export function TopHeader() {
             </button>
 
             {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-[#CFC5B8]/70 dark:border-white/15 bg-[#FCF9F4] dark:bg-[#1E2024] shadow-xl p-2 z-50">
+              <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-[#CFC5B8]/70 bg-[#FCF9F4] shadow-xl p-2 z-50">
                 <div className="flex items-center justify-between px-2 py-2">
-                  <span className="text-xs font-bold text-[#1B1C19] dark:text-white">Notifications</span>
+                  <span className="text-xs font-bold text-[#1B1C19]">Notifications</span>
                   {notifications.length > 0 && (
                     <button
                       onClick={() => setNotifications([])}
-                      className="text-[10px] font-bold text-[#86724F] dark:text-[#E8EAED]"
+                      className="text-[10px] font-bold text-[#86724F]"
                     >
                       Clear all
                     </button>
                   )}
                 </div>
                 {notifications.length === 0 ? (
-                  <p className="px-2 py-4 text-xs text-[#7E766B] dark:text-white/60 text-center">No updates yet.</p>
+                  <p className="px-2 py-4 text-xs text-[#7E766B] text-center">No updates yet.</p>
                 ) : (
                   <div className="max-h-72 overflow-y-auto space-y-1">
                     {notifications.map((notification) => (
-                      <div key={notification.id} className="rounded-xl px-3 py-2.5 bg-white/70 dark:bg-white/5 border border-[#CFC5B8]/40 dark:border-white/10">
-                        <p className="text-xs font-bold text-[#1B1C19] dark:text-white">{notification.title}</p>
-                        <p className="mt-1 text-[11px] text-[#7E766B] dark:text-white/70 leading-relaxed">{notification.detail}</p>
+                      <div key={notification.id} className="rounded-xl px-3 py-2.5 bg-white/70 border border-[#CFC5B8]/40">
+                        <p className="text-xs font-bold text-[#1B1C19]">{notification.title}</p>
+                        <p className="mt-1 text-[11px] text-[#7E766B] leading-relaxed">{notification.detail}</p>
                       </div>
                     ))}
                   </div>
@@ -225,15 +218,14 @@ export function TopHeader() {
             )}
           </div>
 
-          {/* Sign Out Button with Jitter Micro-Interactions */}
-          <JitterHeaderButton
+          <button
             onClick={logout}
-            variant="danger"
+            className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold text-[#BA1A1A] hover:bg-[#FFDAD6]/50 transition"
             title="Sign Out"
-            icon={<LogOut className="w-3.5 h-3.5" />}
           >
+            <LogOut className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Sign Out</span>
-          </JitterHeaderButton>
+          </button>
         </div>
       </div>
     </header>

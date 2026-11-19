@@ -37,7 +37,6 @@ import { registerRoomRoutes } from './modules/rooms/rooms.js';
 import type { RoomDependencies } from './modules/rooms/rooms.js';
 import { registerAttendanceRoutes } from './modules/attendance/attendance.js';
 import { registerCommunityRoutes } from './modules/community/community.js';
-import { registerSubmissionsRoutes, type SubmissionsDependencies } from './modules/submissions/submissions.js';
 
 const databaseUrl = process.env.DATABASE_URL;
 export const prisma = new PrismaClient({
@@ -60,7 +59,6 @@ const makePrismaDeps = (db: PrismaClient) => ({
   attendanceRecord: db.attendanceRecord,
   attendanceSession: db.attendanceSession,
   subject: db.subject,
-  submissionDeadline: db.submissionDeadline,
   $transaction: db.$transaction.bind(db),
 });
 
@@ -91,7 +89,6 @@ export const buildServer = (
   registerRoomRoutes(app, moduleDependencies as unknown as RoomDependencies);
   registerAttendanceRoutes(app, moduleDependencies as any);
   registerCommunityRoutes(app, prisma as any);
-  registerSubmissionsRoutes(app, moduleDependencies as unknown as SubmissionsDependencies);
 
   return app;
 };
