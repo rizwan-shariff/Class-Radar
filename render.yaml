@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: classradar-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    preDeployCommand: pnpm prisma:migrate:deploy
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: classradar-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: ATTENDANCE_THRESHOLD
+        value: "75"
+
+databases:
+  - name: classradar-postgres
+    plan: free
+    databaseName: classradar
+    user: classradar

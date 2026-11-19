@@ -4,8 +4,19 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction && !process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required in production');
+}
+if (isProduction && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in production');
+}
+
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret_classradar_2026';
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL ||
+  'postgresql://test:test@localhost:5432/classradar_test?schema=public';
 
 import {
   registerAuthRoutes,
@@ -27,7 +38,7 @@ import type { RoomDependencies } from './modules/rooms/rooms.js';
 import { registerAttendanceRoutes } from './modules/attendance/attendance.js';
 import { registerCommunityRoutes } from './modules/community/community.js';
 
-const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
+const databaseUrl = process.env.DATABASE_URL;
 export const prisma = new PrismaClient({
   datasources: {
     db: {
@@ -52,10 +63,13 @@ const makePrismaDeps = (db: PrismaClient) => ({
 });
 
 export const buildServer = (
-  dependencies: AuthDependencies = prisma,
+  dependencies: AuthDependencies = prisma as unknown as AuthDependencies,
 ): FastifyInstance => {
   const app = Fastify({ logger: true });
-  void app.register(cors, { origin: true });
+  const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : true;
+  void app.register(cors, { origin: corsOrigin });
   void app.register(multipart);
   void app.register(rateLimit, { global: false });
 
