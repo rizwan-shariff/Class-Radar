@@ -243,27 +243,34 @@ export const registerAttendanceRoutes = (
       },
       orderBy: { markedAt: 'desc' },
     });
-    const sectionStudents = session?.slot?.sectionId
-      ? await deps.user.findMany({ where: { role: 'STUDENT', sectionId: session.slot.sectionId } })
-      : [];
+    const sectionFilter = session?.slot?.sectionId
+      ? { role: 'STUDENT', sectionId: session.slot.sectionId }
+      : { role: 'STUDENT' };
+    const sectionStudents = await deps.user.findMany({ where: sectionFilter });
+    const recordByStudent = new Map(records.map((record: any) => [record.studentId, record]));
     const presentCount = records.filter((r: any) => r.status === 'PRESENT').length;
-    const absentCount = records.filter((r: any) => r.status === 'ABSENT').length;
+    const absentCount = session?.status === 'CLOSED'
+      ? sectionStudents.filter((student: any) => recordByStudent.get(student.id)?.status === 'ABSENT').length
+      : Math.max(0, sectionStudents.length - presentCount);
     const totalStudents = sectionStudents.length;
+
+    const fullRoll = sectionStudents.map((student: any) => {
+      const record = recordByStudent.get(student.id);
+      return {
+        studentId: student.id,
+        studentName: record?.student?.name || student.name || 'Student',
+        studentEmail: record?.student?.email || student.email || '',
+        markedAt: record?.markedAt || null,
+        method: record?.method || 'SYSTEM',
+        status: record?.status || (session?.status === 'CLOSED' ? 'ABSENT' : 'PENDING'),
+      };
+    });
 
     return reply.send({
       presentCount,
       totalStudents,
-      absentCount: session?.status === 'CLOSED'
-        ? absentCount
-        : Math.max(0, totalStudents - presentCount),
-      records: records.map((r: any) => ({
-        studentId: r.studentId,
-        studentName: r.student?.name || 'Verified Student',
-        studentEmail: r.student?.email || '',
-        markedAt: r.markedAt,
-        method: r.method,
-        status: r.status,
-      })),
+      absentCount,
+      records: fullRoll,
     });
   });
 
@@ -284,37 +291,37 @@ export const registerAttendanceRoutes = (
       return reply.status(404).send({ error: 'Session not found' });
     }
 
-    // Mark remaining enrolled students in this section who did not scan as ABSENT
-    // before closing the session so history is complete immediately.
-    if (session.slot?.sectionId) {
-      const sectionStudents = await deps.user.findMany({
-        where: { role: 'STUDENT', sectionId: session.slot.sectionId },
-      });
+    const sectionId = session.slot?.sectionId;
+    const sectionFilter = sectionId
+      ? { role: 'STUDENT', sectionId }
+      : { role: 'STUDENT' };
+    const sectionStudents = await deps.user.findMany({
+      where: sectionFilter,
+    });
 
-      const existingRecords = await deps.attendanceRecord.findMany({
-        where: { sessionId: id },
-      });
-      const recordedStudentIds = new Set(existingRecords.map((r: any) => r.studentId));
+    const existingRecords = await deps.attendanceRecord.findMany({
+      where: { sessionId: id },
+    });
+    const recordedStudentIds = new Set(existingRecords.map((r: any) => r.studentId));
 
-      for (const st of sectionStudents) {
-        if (!recordedStudentIds.has(st.id)) {
-          await deps.attendanceRecord.create({
-            data: {
-              sessionId: id,
-              studentId: st.id,
-              status: 'ABSENT',
-              method: 'SYSTEM',
-            },
-          });
-        }
+    for (const student of sectionStudents) {
+      if (!recordedStudentIds.has(student.id)) {
+        await deps.attendanceRecord.create({
+          data: {
+            sessionId: id,
+            studentId: student.id,
+            status: 'ABSENT',
+            method: 'SYSTEM',
+          },
+        });
       }
-
-      await deps.attendanceSession.update({
-        where: { id },
-        data: { status: 'CLOSED', closedAt: new Date() },
-      });
-      activeQrBeacons.delete(id);
     }
+
+    await deps.attendanceSession.update({
+      where: { id },
+      data: { status: 'CLOSED', closedAt: new Date() },
+    });
+    activeQrBeacons.delete(id);
 
     // Emit live event that session attendance was finalized
     emitToRoom(`session:${id}`, 'attendance:finalized', { sessionId: id });

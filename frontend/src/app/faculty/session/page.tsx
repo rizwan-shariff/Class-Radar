@@ -366,6 +366,14 @@ function SessionContent() {
                 style={{ width: `${Math.min(100, Math.max(4, (presentCount / (totalCount || 1)) * 100))}%` }}
               />
             </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-[#30A46C] bg-[#E7F6ED] px-3 py-1.5 rounded-xl">
+                {presentCount} Present
+              </span>
+              <span className="text-xs font-bold text-[#BA1A1A] bg-[#FFDAD6] px-3 py-1.5 rounded-xl">
+                {isClosed ? Math.max(0, totalCount - presentCount) : Math.max(0, totalCount - presentCount)} Absent
+              </span>
+            </div>
 
             {/* Live Student Verified Activity List */}
             <div className="pt-2 border-t border-[#CFC5B8]/40 space-y-2.5">

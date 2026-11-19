@@ -162,4 +162,29 @@ describe('attendance bug fixes', () => {
       totalStudents: 3,
     });
   });
+
+  it('closes the session and creates absent records for every non-scanned student', async () => {
+    let absentCreates = 0;
+    const deps = createDeps();
+    deps.attendanceRecord.create = async ({ data }: { data: any }) => {
+      if (data.status === 'ABSENT') absentCreates += 1;
+      return { id: `record-${absentCreates}`, markedAt: new Date() };
+    };
+    deps.attendanceSession.findUnique = async ({ where }) =>
+      where.id === 'session-1'
+        ? { id: 'session-1', slotId: 'slot-1', status: 'OPEN', slot: { sectionId: 'sec-1' } }
+        : null;
+
+    const appWithDeps = Fastify();
+    registerAttendanceRoutes(appWithDeps, deps);
+    const res = await appWithDeps.inject({
+      method: 'POST',
+      url: '/api/v1/attendance/sessions/session-1/close',
+      headers: { authorization: `Bearer ${makeToken('FACULTY', null)}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ success: true });
+    expect(absentCreates).toBe(2);
+  });
 });
