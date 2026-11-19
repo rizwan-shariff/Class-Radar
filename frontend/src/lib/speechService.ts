@@ -154,6 +154,12 @@ export class SpeechService {
           return;
         }
 
+        if (errType === 'aborted') {
+          // 'aborted' occurs normally when recognition is stopped or when sending a query.
+          // Do not treat as an error.
+          return;
+        }
+
         if (errType === 'network') {
           callbacks.onError?.('Speech recognition network error. Please verify your internet connection.');
           return;
