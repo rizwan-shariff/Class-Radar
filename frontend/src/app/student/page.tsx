@@ -87,7 +87,6 @@ export default function StudentDashboardPage() {
       refetchDeadlines();
     },
   });
-  });
 
   // Calculate high-level attendance metric
   const avgAttendance = attendanceSummary && attendanceSummary.length > 0
