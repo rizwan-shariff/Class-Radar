@@ -28,11 +28,12 @@ function SessionContent() {
 
   const [sessionId, setSessionId] = useState<string>('session-live-01');
   const [token, setToken] = useState<string>('classradar-jwt-token-alpha');
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(5);
   const [presentCount, setPresentCount] = useState(0);
   const [totalCount, setTotalCount] = useState(60);
   const [isClosed, setIsClosed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   const [verifiedStudents, setVerifiedStudents] = useState<Array<{
     studentId: string;
@@ -46,8 +47,9 @@ function SessionContent() {
     try {
       const records = await api.attendance.getSessionRecords(sid);
       if (records && Array.isArray(records)) {
-        setVerifiedStudents(records);
-        setPresentCount(records.length);
+        setVerifiedStudents(records.records.filter((record) => record.status === 'PRESENT'));
+        setPresentCount(records.presentCount);
+        setTotalCount(records.totalStudents);
       }
     } catch {
       // ignore
@@ -68,8 +70,7 @@ function SessionContent() {
           loadExistingRecords(session.id);
         }
       } catch (err: any) {
-        // Fallback live rotating mock token
-        generateNewToken();
+        setSessionError(err?.message || 'Unable to start attendance session.');
       }
     }
     start();
@@ -79,7 +80,7 @@ function SessionContent() {
     const randomSuffix = Math.random().toString(36).substring(2, 10).toUpperCase();
     const mockSignedToken = `CR-QR-${slotId}-${Date.now()}-${randomSuffix}`;
     setToken(mockSignedToken);
-    setCountdown(10);
+    setCountdown(5);
   };
 
   const fetchToken = async (activeSessionId: string) => {
@@ -87,16 +88,14 @@ function SessionContent() {
       const res = await api.attendance.getToken(activeSessionId);
       if (res && res.token) {
         setToken(res.token);
-        const expMs = new Date(res.expiresAt).getTime() - Date.now();
-        const secondsLeft = Math.max(1, Math.round(expMs / 1000));
-        setCountdown(secondsLeft);
+        setCountdown(5);
       }
     } catch (e) {
-      generateNewToken();
+      setSessionError('Unable to refresh attendance QR.');
     }
   };
 
-  // 10-second countdown ticker & auto-poll fallback for student verified records
+  // 5-second countdown ticker & auto-poll fallback for student verified records
   useEffect(() => {
     if (isClosed) return;
 
@@ -115,7 +114,7 @@ function SessionContent() {
           } else {
             generateNewToken();
           }
-          return 10;
+          return 5;
         }
         return prev - 1;
       });
@@ -195,7 +194,7 @@ function SessionContent() {
             Cryptographic Attendance Beacon
           </h1>
           <p className="text-xs sm:text-sm text-[#4C463C]">
-            Project this screen onto the classroom projector. Tokens dynamically rotate every 10 seconds to invalidate photo sharing.
+            Project this screen onto the classroom projector. Tokens dynamically rotate every 5 seconds to invalidate photo sharing.
           </p>
         </div>
 
@@ -227,7 +226,15 @@ function SessionContent() {
           {/* Specular Edge Rim */}
           <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent" />
 
-          {isClosed ? (
+          {sessionError ? (
+            <div className="py-16 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center mx-auto">
+                <XCircle className="w-10 h-10" />
+              </div>
+              <h3 className="text-xl font-bold text-[#1B1C19]">Unable to Start Attendance</h3>
+              <p className="text-xs text-[#7E766B] max-w-sm mx-auto">{sessionError}</p>
+            </div>
+          ) : isClosed ? (
             <div className="py-16 space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#F0EEE9] text-[#7E766B] flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-10 h-10" />
@@ -275,7 +282,7 @@ function SessionContent() {
                 <div className="h-2.5 w-full rounded-full bg-[#F0EEE9] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-[#6C5939] transition-all duration-1000 ease-linear"
-                    style={{ width: `${(countdown / 10) * 100}%` }}
+                    style={{ width: `${(countdown / 5) * 100}%` }}
                   />
                 </div>
               </div>
@@ -378,7 +385,7 @@ function SessionContent() {
             <ul className="space-y-3 text-xs text-[#4C463C] leading-relaxed">
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] mt-1.5 shrink-0" />
-                <span><strong>Short-Lived JWTs:</strong> Each QR contains an HMAC-signed token expiring in exactly 10 seconds.</span>
+                <span><strong>Short-Lived JWTs:</strong> Each QR refreshes every 5 seconds and remains within a 20-second server acceptance window.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#6C5939] mt-1.5 shrink-0" />

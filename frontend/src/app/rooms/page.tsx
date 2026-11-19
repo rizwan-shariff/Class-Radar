@@ -34,6 +34,7 @@ export default function FreeRoomsPage() {
         date: selectedDate,
         period: selectedPeriod,
         type: roomType || undefined,
+        includeUnavailable: true,
       }),
   });
 
@@ -186,12 +187,26 @@ export default function FreeRoomsPage() {
                 </div>
 
                 <div className="pt-3 border-t border-[#CFC5B8]/40 flex items-center justify-between pl-2">
-                  <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Unoccupied</span>
-                  </span>
+                  {room.available === false ? (
+                    <div className="min-w-0 pr-2">
+                      <span className="text-xs font-semibold text-[#BA1A1A] flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#BA1A1A]" />
+                        <span>Booked / Occupied</span>
+                      </span>
+                      {room.booking?.purpose && (
+                        <p className="mt-1 text-[10px] text-[#7E766B] truncate" title={room.booking.purpose}>
+                          Reason: {room.booking.purpose}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Unoccupied</span>
+                    </span>
+                  )}
 
-                  {(user?.role === 'FACULTY' || user?.role === 'ADMIN') && (
+                  {room.available !== false && (user?.role === 'FACULTY' || user?.role === 'ADMIN') && (
                     <button
                       onClick={() => setBookingRoom(room)}
                       className="py-1.5 px-3.5 rounded-xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95"

@@ -31,9 +31,9 @@ export default function LoginPage() {
   };
 
   const setDemoAccount = async (role: 'STUDENT' | 'FACULTY' | 'ADMIN') => {
-    let emailChoice = 'student1@classradar.edu';
+    let emailChoice = '2025cs_priyadharshiniv_f@nie.ac.in';
     if (role === 'STUDENT') {
-      emailChoice = 'student1@classradar.edu';
+      emailChoice = '2025cs_priyadharshiniv_f@nie.ac.in';
     } else if (role === 'FACULTY') {
       emailChoice = 'veena.mohan@classradar.edu';
     } else if (role === 'ADMIN') {

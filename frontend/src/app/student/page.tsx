@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, Slot } from '@/lib/api';
 import { useSocket } from '@/lib/useSocket';
@@ -29,6 +29,16 @@ export default function StudentDashboardPage() {
   const queryClient = useQueryClient();
   const [liveToast, setLiveToast] = useState<string | null>(null);
 
+  useEffect(() => {
+    const today = new Date();
+    const localDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
+    setSelectedDate(localDate);
+  }, []);
+
   // Listen to realtime changes for student section
   useSocket({
     'timetable:changed': (payload: any) => {
@@ -50,6 +60,12 @@ export default function StudentDashboardPage() {
   const { data: attendanceSummary } = useQuery({
     queryKey: ['student-attendance-summary'],
     queryFn: () => api.attendance.summary(),
+  });
+
+  const { data: activeSession } = useQuery({
+    queryKey: ['student-active-attendance'],
+    queryFn: () => api.attendance.checkActiveSession(),
+    refetchInterval: 5000,
   });
 
   // Calculate high-level attendance metric
@@ -248,13 +264,19 @@ export default function StudentDashboardPage() {
 
                     {/* Right Action Button */}
                     <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-2 sm:pt-0">
-                      <Link
-                        href="/student/scan"
-                        className="px-4 py-2 rounded-full bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
-                      >
-                        <span>Scan & Verify</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
+                      {activeSession?.active && activeSession.session?.slotId === slot.id && !isCanc ? (
+                        <Link
+                          href="/student/scan"
+                          className="px-4 py-2 rounded-full bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+                        >
+                          <span>Scan & Verify</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      ) : (
+                        <span className="px-3 py-1.5 rounded-full bg-[#F0EEE9] text-[#7E766B] text-[10px] font-bold">
+                          QR Not Live
+                        </span>
+                      )}
                     </div>
                   </div>
 

@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
+import { useSocket } from '@/lib/useSocket';
 import {
   LogOut,
   Bell,
@@ -27,6 +28,46 @@ import {
 export function TopHeader() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; detail: string }>>([]);
+
+  const { joinRooms } = useSocket({
+    'rooms:changed': (payload: any) => {
+      const booking = payload?.booking;
+      setNotifications((current) => [
+        {
+          id: `room-${booking?.id || Date.now()}`,
+          title: 'Room booked',
+          detail: `${booking?.roomName || 'A room'} was booked by ${booking?.bookedByName || 'a faculty member'} for Period ${booking?.period || ''}${booking?.purpose ? ` — ${booking.purpose}` : ''}`,
+        },
+        ...current,
+      ].slice(0, 20));
+    },
+    'absence:created': (payload: any) => {
+      setNotifications((current) => [
+        {
+          id: `absence-${payload?.id || Date.now()}`,
+          title: 'Faculty absence reported',
+          detail: `${payload?.facultyName || 'A faculty member'} marked periods ${payload?.periods?.join(', ') || ''} absent${payload?.reason ? ` — ${payload.reason}` : ''}`,
+        },
+        ...current,
+      ].slice(0, 20));
+    },
+    'timetable:changed': (payload: any) => {
+      setNotifications((current) => [
+        {
+          id: `timetable-${Date.now()}`,
+          title: 'Timetable updated',
+          detail: payload?.change ? `Schedule change: ${payload.change}` : 'A timetable slot was updated.',
+        },
+        ...current,
+      ].slice(0, 20));
+    },
+  });
+
+  useEffect(() => {
+    if (user) joinRooms();
+  }, [user, joinRooms]);
 
   if (!user || pathname === '/login') return null;
 
@@ -126,13 +167,46 @@ export function TopHeader() {
           {/* Dark / Light Theme Toggle Button */}
           <ThemeToggle />
 
-          <button
-            className="relative p-2 rounded-xl text-[#4C463C] hover:bg-[#F0EEE9] transition"
-            aria-label="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#6C5939] ring-2 ring-white" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setNotificationsOpen((open) => !open)}
+              className="relative p-2 rounded-xl text-[#4C463C] hover:bg-[#F0EEE9] transition"
+              aria-label="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {notifications.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#6C5939] ring-2 ring-white" />
+              )}
+            </button>
+
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-[#CFC5B8]/70 bg-[#FCF9F4] shadow-xl p-2 z-50">
+                <div className="flex items-center justify-between px-2 py-2">
+                  <span className="text-xs font-bold text-[#1B1C19]">Notifications</span>
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={() => setNotifications([])}
+                      className="text-[10px] font-bold text-[#86724F]"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                {notifications.length === 0 ? (
+                  <p className="px-2 py-4 text-xs text-[#7E766B] text-center">No updates yet.</p>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto space-y-1">
+                    {notifications.map((notification) => (
+                      <div key={notification.id} className="rounded-xl px-3 py-2.5 bg-white/70 border border-[#CFC5B8]/40">
+                        <p className="text-xs font-bold text-[#1B1C19]">{notification.title}</p>
+                        <p className="mt-1 text-[11px] text-[#7E766B] leading-relaxed">{notification.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <button
             onClick={logout}

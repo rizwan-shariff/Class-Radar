@@ -35,6 +35,14 @@ export interface Room {
   name: string;
   type: 'CLASSROOM' | 'LAB';
   capacity: number;
+  available?: boolean;
+  status?: 'AVAILABLE' | 'BOOKED_OR_OCCUPIED';
+  booking?: {
+    id: string;
+    purpose: string;
+    date: string;
+    period: number;
+  } | null;
 }
 
 export interface Slot {
@@ -197,13 +205,14 @@ export const api = {
 
   rooms: {
     all: () => request<Room[]>('/rooms'),
-    free: (params: { date: string; period: number; type?: string; minCapacity?: number }) => {
+    free: (params: { date: string; period: number; type?: string; minCapacity?: number; includeUnavailable?: boolean }) => {
       const query = new URLSearchParams({
         date: params.date,
         period: params.period.toString(),
       });
       if (params.type) query.set('type', params.type);
       if (params.minCapacity) query.set('minCapacity', params.minCapacity.toString());
+      if (params.includeUnavailable) query.set('includeUnavailable', 'true');
       return request<Room[]>(`/rooms/free?${query.toString()}`);
     },
     book: (data: { roomId: string; date: string; period: number; purpose: string }) =>
@@ -251,7 +260,12 @@ export const api = {
         method: 'POST',
       }),
     getSessionRecords: (sessionId: string) =>
-      request<Array<{ studentId: string; studentName: string; studentEmail: string; markedAt: string; method: string }>>(
+      request<{
+        presentCount: number;
+        totalStudents: number;
+        absentCount: number;
+        records: Array<{ studentId: string; studentName: string; studentEmail: string; markedAt: string; method: string; status: string }>;
+      }>(
         `/attendance/sessions/${sessionId}/records`
       ),
     getToken: (sessionId: string) =>

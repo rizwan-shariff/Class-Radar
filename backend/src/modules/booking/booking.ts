@@ -135,8 +135,12 @@ export const registerBookingRoutes = (
         booking: {
           id: booking.id,
           roomId: booking.roomId,
+          roomName: room.name,
           date: booking.date.toISOString().slice(0, 10),
           period: booking.period,
+          purpose: booking.purpose,
+          bookedByName: actor.name,
+          bookedByRole: actor.role,
         },
       });
 

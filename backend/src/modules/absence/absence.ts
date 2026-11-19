@@ -47,7 +47,7 @@ export type AbsenceDependencies = AuthDependencies & {
       data: {
         facultyId: string;
         date: Date;
-        periods: number[];
+        periods: number[] | string;
         reason?: string;
         createdById: string;
       };
@@ -56,7 +56,7 @@ export type AbsenceDependencies = AuthDependencies & {
       id: string;
       facultyId: string;
       date: Date;
-      periods: number[];
+      periods: number[] | string;
       reason: string | null;
       createdById: string;
       faculty?: { id: string; name: string; email: string };
@@ -69,7 +69,7 @@ export type AbsenceDependencies = AuthDependencies & {
         id: string;
         facultyId: string;
         date: Date;
-        periods: number[];
+        periods: number[] | string;
         reason: string | null;
         createdById: string;
         faculty?: { id: string; name: string; email: string };
@@ -155,23 +155,37 @@ export const registerAbsenceRoutes = (
       }
 
       // Create the absence record
-      const absence = await deps.absence.create({
-        data: {
-          facultyId,
-          date: absenceDate,
-          periods,
-          reason,
-          createdById: actor.id,
-        },
-        include: { faculty: true },
-      });
+      let absence;
+      try {
+        absence = await deps.absence.create({
+          data: {
+            facultyId,
+            date: absenceDate,
+            periods: JSON.stringify(periods),
+            reason,
+            createdById: actor.id,
+          },
+          include: { faculty: true },
+        });
+      } catch (error) {
+        app.log.error(error);
+        return reply.code(500).send({
+          error: { code: 'ABSENCE_CREATE_FAILED', message: 'Unable to submit absence' },
+        });
+      }
+
+      const responsePeriods =
+        typeof absence.periods === 'string'
+          ? (JSON.parse(absence.periods) as number[])
+          : absence.periods;
 
       // Emit to admin room
       emitToRoom('admin', 'absence:created', {
         id: absence.id,
         facultyId: absence.facultyId,
+        facultyName: actor.name,
         date: absence.date.toISOString().slice(0, 10),
-        periods: absence.periods,
+        periods: responsePeriods,
         reason: absence.reason,
       });
 
@@ -207,14 +221,20 @@ export const registerAbsenceRoutes = (
       });
 
       return reply.send(
-        absences.map((a) => ({
-          id: a.id,
-          facultyId: a.facultyId,
-          date: a.date.toISOString().slice(0, 10),
-          periods: a.periods,
-          reason: a.reason,
-          createdById: a.createdById,
-        })),
+        absences.map((a) => {
+          const periods =
+            typeof a.periods === 'string'
+              ? (JSON.parse(a.periods) as number[])
+              : a.periods;
+          return {
+            id: a.id,
+            facultyId: a.facultyId,
+            date: a.date.toISOString().slice(0, 10),
+            periods,
+            reason: a.reason,
+            createdById: a.createdById,
+          };
+        }),
       );
     },
   );

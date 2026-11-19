@@ -81,14 +81,20 @@ const createDeps = (overrides: Partial<AbsenceDependencies> = {}): AbsenceDepend
     },
   },
   absence: {
-    create: async ({ data }) => ({
-      id: 'abs-1',
-      facultyId: data.facultyId,
-      date: data.date,
-      periods: data.periods,
-      reason: data.reason ?? null,
-      createdById: data.createdById,
-    }),
+    create: async ({ data }) => {
+      const periods =
+        typeof data.periods === 'string'
+          ? (JSON.parse(data.periods) as number[])
+          : data.periods;
+      return {
+        id: 'abs-1',
+        facultyId: data.facultyId,
+        date: data.date,
+        periods,
+        reason: data.reason ?? null,
+        createdById: data.createdById,
+      };
+    },
     findMany: async () => [
       {
         id: 'abs-1',

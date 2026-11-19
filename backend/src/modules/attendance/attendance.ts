@@ -88,7 +88,7 @@ export const registerAttendanceRoutes = (
 
   /**
    * GET /api/v1/attendance/sessions/:id/token
-   * Generates a 15-second rotating cryptographic attendance token
+   * Generates a 5-second rotating cryptographic attendance token
    */
   app.get('/api/v1/attendance/sessions/:id/token', { preHandler: auth }, async (request, reply) => {
     const { id } = z.object({ id: z.string() }).parse(request.params);
@@ -99,7 +99,7 @@ export const registerAttendanceRoutes = (
     }
 
     const nonce = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const expiresAt = new Date(Date.now() + 20000); // 20s validity
+    const expiresAt = new Date(Date.now() + 20000); // 20s acceptance window
     const token = jwt.sign(
       {
         sessionId: session.id,
@@ -119,6 +119,10 @@ export const registerAttendanceRoutes = (
    */
   app.get('/api/v1/attendance/sessions/:id/records', { preHandler: auth }, async (request, reply) => {
     const { id } = z.object({ id: z.string() }).parse(request.params);
+    const session = await deps.attendanceSession.findUnique({
+      where: { id },
+      include: { slot: true },
+    });
     const records = await deps.attendanceRecord.findMany({
       where: { sessionId: id },
       include: {
@@ -128,16 +132,25 @@ export const registerAttendanceRoutes = (
       },
       orderBy: { markedAt: 'desc' },
     });
+    const sectionStudents = session?.slot?.sectionId
+      ? await deps.user.findMany({ where: { role: 'STUDENT', sectionId: session.slot.sectionId } })
+      : [];
+    const presentCount = records.filter((r: any) => r.status === 'PRESENT').length;
+    const totalStudents = sectionStudents.length;
 
-    return reply.send(
-      records.map((r: any) => ({
+    return reply.send({
+      presentCount,
+      totalStudents,
+      absentCount: Math.max(0, totalStudents - presentCount),
+      records: records.map((r: any) => ({
         studentId: r.studentId,
         studentName: r.student?.name || 'Verified Student',
         studentEmail: r.student?.email || '',
         markedAt: r.markedAt,
         method: r.method,
-      }))
-    );
+        status: r.status,
+      })),
+    });
   });
 
   /**

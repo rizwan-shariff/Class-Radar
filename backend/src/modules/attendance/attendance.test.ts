@@ -1,0 +1,102 @@
+import Fastify from 'fastify';
+import jwt from 'jsonwebtoken';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../realtime/realtime.js', () => ({
+  emitToRoom: vi.fn(),
+}));
+
+import { registerAttendanceRoutes, type AttendanceDependencies } from './attendance.js';
+
+process.env.JWT_SECRET = 'attendance-test-secret';
+const secret = 'attendance-test-secret';
+
+const makeToken = (role = 'STUDENT', sectionId: string | null = 'sec-1') =>
+  jwt.sign({ role, sectionId }, secret, { subject: 'stu-1', expiresIn: '1h' });
+
+const createDeps = (): AttendanceDependencies => ({
+  user: {
+    findMany: async () => [
+      { id: 'stu-1', name: 'Student One', email: 'student1@test.com' },
+      { id: 'stu-2', name: 'Student Two', email: 'student2@test.com' },
+      { id: 'stu-3', name: 'Student Three', email: 'student3@test.com' },
+    ],
+    findUnique: async () => ({ id: 'stu-1', name: 'Student One', email: 'student1@test.com' }),
+  },
+  slot: {
+    findUnique: async () => ({ id: 'slot-1', sectionId: 'sec-1' }),
+  },
+  attendanceSession: {
+    create: async () => ({ id: 'session-1', slotId: 'slot-1', status: 'OPEN' }),
+    findFirst: async () => null,
+    findUnique: async ({ where }) => where.id === 'closed-session'
+      ? { id: 'closed-session', slotId: 'slot-1', status: 'CLOSED', slot: { sectionId: 'sec-1' } }
+      : { id: 'session-1', slotId: 'slot-1', status: 'OPEN', slot: { sectionId: 'sec-1' } },
+    findMany: async () => [],
+    update: async ({ where }) => ({ id: where.id, status: 'CLOSED' }),
+  },
+  attendanceRecord: {
+    findUnique: async () => null,
+    create: async () => ({ id: 'record-1', markedAt: new Date() }),
+    findMany: async () => [
+      { studentId: 'stu-1', status: 'PRESENT', method: 'SCAN', markedAt: new Date(), student: { name: 'Student One', email: 'student1@test.com' } },
+    ],
+    update: async () => ({ id: 'record-1' }),
+  },
+  subject: {
+    findMany: async () => [],
+  },
+});
+
+describe('attendance bug fixes', () => {
+  let app: ReturnType<typeof Fastify>;
+
+  beforeEach(() => {
+    app = Fastify();
+    registerAttendanceRoutes(app, createDeps());
+  });
+
+  it('returns 5-second QR refresh metadata with a server acceptance window', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/attendance/sessions/session-1/token',
+      headers: { authorization: `Bearer ${makeToken('FACULTY', null)}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().token).toBeTypeOf('string');
+    expect(new Date(res.json().expiresAt).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('returns present and total turnout counts', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/attendance/sessions/session-1/records',
+      headers: { authorization: `Bearer ${makeToken('FACULTY', null)}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      presentCount: 1,
+      totalStudents: 3,
+      absentCount: 2,
+    });
+  });
+
+  it('rejects a scan for a closed session', async () => {
+    const closedToken = jwt.sign(
+      { sessionId: 'closed-session', slotId: 'slot-1', nonce: 'TEST' },
+      secret,
+      { expiresIn: '20s' },
+    );
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/attendance/scan',
+      headers: { authorization: `Bearer ${makeToken('STUDENT', 'sec-1')}` },
+      payload: { token: closedToken },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toContain('already closed');
+  });
+});
