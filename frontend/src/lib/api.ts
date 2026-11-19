@@ -40,6 +40,7 @@ export interface Room {
   booking?: {
     id: string;
     purpose: string;
+    bookedByName?: string | null;
     date: string;
     period: number;
   } | null;

@@ -23,7 +23,8 @@ export type RoomAvailabilityDependencies = {
   roomBooking: {
     findUnique(args: {
       where: { roomId_date_period: { roomId: string; date: Date; period: number } };
-    }): Promise<{ id: string; purpose?: string; date?: Date; period?: number } | null>;
+      include?: { bookedBy: { select: { id: true; name: true } } };
+    }): Promise<{ id: string; purpose?: string; date?: Date; period?: number; bookedBy?: { id: string; name: string } } | null>;
   };
 };
 
@@ -124,6 +125,7 @@ export const registerRoomRoutes = (
                 period: parsed.data.period,
               },
             },
+            include: { bookedBy: { select: { id: true, name: true } } },
           });
 
       roomsWithStatus.push({
@@ -134,6 +136,7 @@ export const registerRoomRoutes = (
           ? {
               id: (booking as any).id,
               purpose: (booking as any).purpose,
+              bookedByName: (booking as any).bookedBy?.name || null,
               date: date.toISOString().slice(0, 10),
               period: parsed.data.period,
             }

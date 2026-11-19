@@ -17,6 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/lib/useSocket';
 
 export default function FreeRoomsPage() {
   const { user } = useAuth();
@@ -38,6 +39,12 @@ export default function FreeRoomsPage() {
       }),
   });
 
+  useSocket({
+    'rooms:changed': () => {
+      void refetch();
+    },
+  });
+
   const handleBookRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bookingRoom || !purpose) return;
@@ -50,6 +57,7 @@ export default function FreeRoomsPage() {
         purpose,
       });
       setBookingSuccess(true);
+      await refetch();
       setTimeout(() => {
         setBookingRoom(null);
         setBookingSuccess(false);
@@ -132,11 +140,11 @@ export default function FreeRoomsPage() {
           <div className="flex items-center gap-2">
             <Building className="w-4 h-4 text-[#86724F]" />
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#86724F]">
-              Available Spaces for Period {selectedPeriod}
+              Available & Booked Spaces for Period {selectedPeriod}
             </h2>
           </div>
           <span className="text-xs font-semibold text-[#7E766B]">
-            {freeRooms?.length || 0} Free Rooms Found
+            {freeRooms?.filter((room) => room.available).length || 0} Available · {freeRooms?.filter((room) => room.available === false).length || 0} Booked
           </span>
         </div>
 
@@ -196,6 +204,11 @@ export default function FreeRoomsPage() {
                       {room.booking?.purpose && (
                         <p className="mt-1 text-[10px] text-[#7E766B] truncate" title={room.booking.purpose}>
                           Reason: {room.booking.purpose}
+                        </p>
+                      )}
+                      {room.booking?.bookedByName && (
+                        <p className="mt-1 text-[10px] text-[#7E766B]">
+                          Booked by: {room.booking.bookedByName}
                         </p>
                       )}
                     </div>
