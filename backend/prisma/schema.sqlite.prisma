@@ -24,6 +24,9 @@ model User {
   roomBookings     RoomBooking[]
   sessionsStarted  AttendanceSession[]
   attendance       AttendanceRecord[]
+  posts            CampusPost[]
+  postComments     PostComment[]
+  postLikes        PostLike[]
 }
 
 model Section {
@@ -143,5 +146,41 @@ model AttendanceRecord {
   student    User              @relation(fields: [studentId], references: [id])
 
   @@unique([sessionId, studentId])
+}
+
+model CampusPost {
+  id        String        @id @default(uuid())
+  authorId  String
+  content   String
+  category  String        @default("ACADEMIC") // ACADEMIC, CAMPUS, DOUBT, EVENT
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  PostComment[]
+  likes     PostLike[]
+}
+
+model PostComment {
+  id        String     @id @default(uuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime   @default(now())
+
+  post      CampusPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model PostLike {
+  id        String     @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime   @default(now())
+
+  post      CampusPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
 }
 

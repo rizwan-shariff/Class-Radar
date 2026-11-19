@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, UserCheck, Search, QrCode, BookOpen, Layers, BarChart3, Inbox, History } from 'lucide-react';
+import { Calendar, UserCheck, Search, QrCode, BookOpen, Layers, BarChart3, Inbox, History, Users } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export function BottomNav() {
@@ -28,7 +28,8 @@ export function BottomNav() {
       { label: 'Weekly', href: '/student/timetable', icon: <BookOpen className="w-5 h-5" /> },
       { label: 'Scan', href: '/student/scan', icon: <QrCode className="w-5 h-5" /> },
       { label: 'Attendance', href: '/student/attendance', icon: <UserCheck className="w-5 h-5" /> },
-      { label: 'Free Rooms', href: '/rooms', icon: <Search className="w-5 h-5" /> },
+      { label: 'Community', href: '/student/threads', icon: <Users className="w-5 h-5" /> },
+      { label: 'Rooms', href: '/rooms', icon: <Search className="w-5 h-5" /> },
     ];
   } else if (user.role === 'FACULTY') {
     items = [

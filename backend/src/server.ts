@@ -25,6 +25,7 @@ import type { TimetableDependencies } from './modules/timetable/timetable.js';
 import { registerRoomRoutes } from './modules/rooms/rooms.js';
 import type { RoomDependencies } from './modules/rooms/rooms.js';
 import { registerAttendanceRoutes } from './modules/attendance/attendance.js';
+import { registerCommunityRoutes } from './modules/community/community.js';
 
 const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
 export const prisma = new PrismaClient({
@@ -68,6 +69,7 @@ export const buildServer = (
   registerTimetableRoutes(app, moduleDependencies as unknown as TimetableDependencies);
   registerRoomRoutes(app, moduleDependencies as unknown as RoomDependencies);
   registerAttendanceRoutes(app, moduleDependencies as any);
+  registerCommunityRoutes(app, prisma as any);
 
   return app;
 };

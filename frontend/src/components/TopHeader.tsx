@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Shield,
   Sparkles,
-  History
+  History,
+  Users
 } from 'lucide-react';
 
 export function TopHeader() {
@@ -41,7 +42,8 @@ export function TopHeader() {
     desktopNav = [
       { label: "Today's Schedule", href: '/student', icon: <Calendar className="w-4 h-4" /> },
       { label: 'Weekly Timetable', href: '/student/timetable', icon: <BookOpen className="w-4 h-4" /> },
-      { label: 'Attendance & Bunk', href: '/student/attendance', icon: <UserCheck className="w-4 h-4" /> },
+      { label: 'Attendance & Compliance', href: '/student/attendance', icon: <UserCheck className="w-4 h-4" /> },
+      { label: 'Community Feed', href: '/student/threads', icon: <Users className="w-4 h-4" /> },
       { label: 'Free Rooms', href: '/rooms', icon: <Search className="w-4 h-4" /> },
     ];
   } else if (user.role === 'FACULTY') {

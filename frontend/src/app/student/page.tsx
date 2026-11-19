@@ -19,7 +19,8 @@ import {
   TrendingUp,
   Flame,
   ChevronRight,
-  Layers
+  Layers,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -293,7 +294,7 @@ export default function StudentDashboardPage() {
                 <p className="text-xs text-[#4C463C]">
                   {avgAttendance >= 75
                     ? 'Safe standing. You satisfy all campus examination criteria.'
-                    : 'Attention needed. One or more courses are nearing bunk limit.'}
+                    : 'Attention needed. One or more courses are nearing absence threshold.'}
                 </p>
               </div>
             </div>
@@ -313,7 +314,32 @@ export default function StudentDashboardPage() {
               className="w-full py-2.5 rounded-2xl bg-white border border-[#CFC5B8] hover:bg-[#F0EEE9] text-xs font-bold text-[#1B1C19] transition flex items-center justify-center gap-1.5 shadow-sm"
             >
               <ShieldCheck className="w-4 h-4 text-[#6C5939]" />
-              <span>Open Bunk Intelligence Calculator</span>
+              <span>Open Compliance Calculator</span>
+            </Link>
+          </div>
+
+          {/* Student Peer Community Feed Banner */}
+          <div className="glass-panel rounded-3xl p-6 border border-[#CFC5B8]/60 shadow-md space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#86724F]" />
+                <h3 className="text-sm font-bold text-[#1B1C19]">Peer Community Feed</h3>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-[#E7DFD1] text-[#6C5939] text-[10px] font-bold uppercase">
+                CSE-3F Exclusive
+              </span>
+            </div>
+
+            <p className="text-xs text-[#4C463C]">
+              Share announcements, clear doubts, collaborate on project teams, and stay connected with your batchmates.
+            </p>
+
+            <Link
+              href="/student/threads"
+              className="w-full py-2.5 rounded-2xl bg-[#6C5939] hover:bg-[#554425] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Users className="w-4 h-4" />
+              <span>Join Campus Discussion</span>
             </Link>
           </div>
 

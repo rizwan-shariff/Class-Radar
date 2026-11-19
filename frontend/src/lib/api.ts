@@ -320,4 +320,42 @@ export const api = {
         }>
       >('/attendance/faculty-matrix'),
   },
+
+  community: {
+    getPosts: () =>
+      request<{
+        success: boolean;
+        posts: Array<{
+          id: string;
+          content: string;
+          category: 'ACADEMIC' | 'CAMPUS' | 'DOUBT' | 'EVENT';
+          createdAt: string;
+          authorName: string;
+          authorUsn: string;
+          likesCount: number;
+          isLiked: boolean;
+          comments: Array<{
+            id: string;
+            content: string;
+            createdAt: string;
+            authorName: string;
+            authorUsn: string;
+          }>;
+        }>;
+      }>('/community/posts'),
+    createPost: (data: { content: string; category?: string }) =>
+      request<{ success: boolean; post: any }>('/community/posts', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    addComment: (postId: string, content: string) =>
+      request<{ success: boolean; comment: any }>(`/community/posts/${postId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
+    toggleLike: (postId: string) =>
+      request<{ success: boolean; liked: boolean }>(`/community/posts/${postId}/like`, {
+        method: 'POST',
+      }),
+  },
 };
