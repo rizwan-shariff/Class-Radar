@@ -63,6 +63,16 @@ export function TopHeader() {
         ...current,
       ].slice(0, 20));
     },
+    'attendance:started': (payload: any) => {
+      setNotifications((current) => [
+        {
+          id: `attendance-${payload?.sessionId || Date.now()}`,
+          title: 'Live attendance started',
+          detail: `${payload?.facultyName || 'Your faculty'} launched QR attendance${payload?.subjectName ? ` for ${payload.subjectName}` : ''}${payload?.period ? ` — Period ${payload.period}` : ''}.`,
+        },
+        ...current,
+      ].slice(0, 20));
+    },
   });
 
   useEffect(() => {

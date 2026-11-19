@@ -250,7 +250,7 @@ export const api = {
   },
 
   attendance: {
-    startSession: (data: { slotId: string; date: string }) =>
+    startSession: (data: { slotId?: string; sectionId?: string; period?: number; date: string }) =>
       request<{ id: string; slotId: string; status: 'OPEN' }>('/attendance/sessions', {
         method: 'POST',
         body: JSON.stringify(data),

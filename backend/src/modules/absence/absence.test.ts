@@ -169,7 +169,7 @@ describe('POST /api/v1/absences', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('rejects periods with no faculty slot that weekday', async () => {
+  it('allows faculty to mark an unscheduled valid period absent', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/v1/absences',
@@ -177,8 +177,8 @@ describe('POST /api/v1/absences', () => {
       payload: { date: WED, periods: [1, 5] }, // faculty only has 2 & 3
     });
 
-    expect(res.statusCode).toBe(422);
-    expect(res.json().error.code).toBe('NO_SLOT');
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ facultyId: faculty.id, periods: [1, 5] });
   });
 
   it('rejects Sunday dates', async () => {

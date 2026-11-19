@@ -138,21 +138,8 @@ export const registerAbsenceRoutes = (
       const weekday = jsDay; // 1–6 matches our schema
 
       // Fetch faculty's slots for that weekday
-      const slots = await deps.slot.findMany({
-        where: { facultyId, weekday },
-      });
-
-      const slotPeriods = new Set(slots.map((s) => s.period));
-      const invalidPeriods = periods.filter((p) => !slotPeriods.has(p));
-
-      if (invalidPeriods.length > 0) {
-        return reply.code(422).send({
-          error: {
-            code: 'NO_SLOT',
-            message: `Faculty has no slot on this weekday for period(s): ${invalidPeriods.join(', ')}`,
-          },
-        });
-      }
+      // Absence reporting is valid even on an unscheduled period. Coverage is
+      // reviewed by the admin; this route must not fail merely because no slot exists.
 
       // Create the absence record
       let absence;

@@ -10,6 +10,7 @@ export interface AttendanceDependencies {
   };
   slot: {
     findUnique(args: { where: { id: string }; include?: any }): Promise<any>;
+    findFirst(args: { where: any; include?: any }): Promise<any>;
   };
   attendanceSession: {
     create(args: { data: any }): Promise<any>;
@@ -43,7 +44,11 @@ export const registerAttendanceRoutes = (
       }
       const token = header.slice(7);
       const decoded = jwt.verify(token, getJwtSecret()) as { sub: string; role: string };
-      (request as any).user = { id: decoded.sub, role: decoded.role };
+      (request as any).user = {
+        id: decoded.sub,
+        role: decoded.role,
+        sectionId: (decoded as { sectionId?: string | null }).sectionId ?? null,
+      };
     } catch {
       return reply.status(401).send({ error: 'Invalid or expired token' });
     }
@@ -55,16 +60,48 @@ export const registerAttendanceRoutes = (
    */
   app.post('/api/v1/attendance/sessions', { preHandler: auth }, async (request, reply) => {
     const user = (request as any).user;
+    if (!['FACULTY', 'ADMIN'].includes(user.role)) {
+      return reply.status(403).send({ error: 'Only faculty or admins can launch attendance' });
+    }
     const body = z
       .object({
-        slotId: z.string(),
+        slotId: z.string().optional(),
+        sectionId: z.string().optional(),
+        period: z.number().int().min(1).max(8).optional(),
         date: z.string(),
       })
       .parse(request.body);
 
-    const slot = await deps.slot.findUnique({
-      where: { id: body.slotId },
-    });
+    let slot = body.slotId
+      ? await deps.slot.findUnique({ where: { id: body.slotId } })
+      : null;
+
+    if (!slot && body.sectionId && body.period) {
+      slot = await deps.slot.findFirst({
+        where: { sectionId: body.sectionId, period: body.period },
+        include: { section: true, subject: true, room: true },
+      });
+      if (!slot) {
+        slot = await deps.slot.findFirst({
+          where: { sectionId: body.sectionId },
+          include: { section: true, subject: true, room: true },
+        });
+      }
+    }
+
+    if (!slot && body.period) {
+      slot = await deps.slot.findFirst({
+        where: { period: body.period },
+        include: { section: true, subject: true, room: true },
+      });
+    }
+
+    if (!slot) {
+      slot = await deps.slot.findFirst({
+        where: { facultyId: user.id },
+        include: { section: true, subject: true, room: true },
+      });
+    }
 
     if (!slot) {
       return reply.status(404).send({ error: 'Slot not found' });
@@ -72,12 +109,38 @@ export const registerAttendanceRoutes = (
 
     const session = await deps.attendanceSession.create({
       data: {
-        slotId: body.slotId,
+        slotId: slot.id,
         date: new Date(body.date),
         startedById: user.id,
         status: 'OPEN',
       },
     });
+
+    if (slot.sectionId) {
+      emitToRoom(`section:${slot.sectionId}`, 'attendance:started', {
+        sessionId: session.id,
+        slotId: slot.id,
+        period: slot.period,
+        subjectName: slot.subject?.name,
+        roomName: slot.room?.name,
+        facultyName: slot.faculty?.name,
+      });
+
+      const students = await deps.user.findMany({
+        where: { role: 'STUDENT', sectionId: slot.sectionId },
+        select: { id: true },
+      });
+      for (const student of students) {
+        emitToRoom(`user:${student.id}`, 'attendance:started', {
+          sessionId: session.id,
+          slotId: slot.id,
+          period: slot.period,
+          subjectName: slot.subject?.name,
+          roomName: slot.room?.name,
+          facultyName: slot.faculty?.name,
+        });
+      }
+    }
 
     return reply.status(201).send({
       id: session.id,
@@ -360,11 +423,16 @@ export const registerAttendanceRoutes = (
       return reply.send({ active: false, session: null });
     }
 
-    // If user is a student, filter to their section if available
-    let matching = openSessions[0];
-    if (user.role === 'STUDENT' && user.sectionId) {
-      const secMatch = openSessions.find((s: any) => s.slot?.sectionId === user.sectionId);
-      if (secMatch) matching = secMatch;
+    let matching: any = null;
+    if (user.role === 'STUDENT') {
+      matching = openSessions.find((session: any) => (
+        session.slot?.sectionId === user.sectionId
+      ));
+      if (!matching) {
+        return reply.send({ active: false, session: null });
+      }
+    } else {
+      matching = openSessions[0];
     }
 
     return reply.send({

@@ -25,6 +25,7 @@ const createDeps = (): AttendanceDependencies => ({
   },
   slot: {
     findUnique: async () => ({ id: 'slot-1', sectionId: 'sec-1' }),
+    findFirst: async () => ({ id: 'slot-1', sectionId: 'sec-1', period: 1, subject: { name: 'Course' }, room: { name: 'Room 406' } }),
   },
   attendanceSession: {
     create: async () => ({ id: 'session-1', slotId: 'slot-1', status: 'OPEN' }),
