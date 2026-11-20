@@ -1,12 +1,12 @@
 services:
+  # 1. Fastify Backend API & Real-time WebSockets
   - type: web
     name: classradar-api
     runtime: node
     rootDir: backend
     plan: free
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
-    preDeployCommand: pnpm prisma:migrate:deploy
-    startCommand: pnpm start
+    buildCommand: npx -y pnpm@10 install --no-frozen-lockfile && npx -y pnpm@10 build
+    startCommand: npx -y pnpm@10 prisma:migrate:deploy && npx -y pnpm@10 start
     envVars:
       - key: NODE_ENV
         value: production
@@ -27,6 +27,37 @@ services:
       - key: ATTENDANCE_THRESHOLD
         value: "75"
 
+  # 2. Next.js Full-Stack Web Frontend (with NVIDIA NIM Voice AI)
+  - type: web
+    name: classradar-web
+    runtime: node
+    rootDir: frontend
+    plan: free
+    buildCommand: npx -y pnpm@10 install --no-frozen-lockfile && npx -y pnpm@10 build
+    startCommand: npx -y pnpm@10 start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: classradar-api
+          property: host
+        transform: https://{{ . }}/api/v1
+      - key: NEXT_PUBLIC_SOCKET_URL
+        fromService:
+          type: web
+          name: classradar-api
+          property: host
+        transform: https://{{ . }}
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_NVIDIA_MODEL
+        value: nvidia/nemotron-3.5-lightning-30b-a3b
+
+# 3. PostgreSQL Database
 databases:
   - name: classradar-postgres
     plan: free
